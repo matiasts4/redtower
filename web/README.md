@@ -16,11 +16,10 @@ npm install
 npm run dev
 ```
 
-The site has three surfaces:
+The site has two public surfaces:
 
 - `/` one long landing with anchored sections: proof, cases, corridor, method, limits.
 - `/system` the operating view over the checked-in files.
-- `/components` the component lab. It is not the product.
 
 `/scenarios`, `/corridor`, `/method`, and `/limits` redirect to their landing anchors.
 

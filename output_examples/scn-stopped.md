@@ -1,7 +1,7 @@
 # RED Control Tower result
 
 **Scenario:** scn-stopped
-**Model:** nvidia/nemotron-3.5-lightning-30b-a3b
+**Model:** nvidia/nemotron-3.5-super-vl-120b-a12b
 
 ## Diagnosis
 

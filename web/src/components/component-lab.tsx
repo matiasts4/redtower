@@ -2,6 +2,7 @@
 
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { SystemSpecimens } from "@/components/system-specimens";
 import { PageIntro } from "@/components/page-intro";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,13 +83,15 @@ export function ComponentLab() {
 
   return (
     <div className="min-h-full bg-paper">
-      <SiteHeader />
-      <main className="mx-auto grid max-w-6xl gap-10 px-4 py-10 md:px-8">
+      <SiteHeader surface="work" />
+      <main className="mx-auto grid max-w-7xl gap-10 px-4 py-10 md:px-8">
         <PageIntro
           kicker={copy.componentsPage.kicker}
           title={copy.componentsPage.title}
           body={copy.componentsPage.body}
         />
+
+        <SystemSpecimens />
 
         <section className="grid gap-4">
           <h2 className="font-mono text-xs tracking-[0.18em] uppercase text-muted-foreground">
@@ -281,7 +284,7 @@ export function ComponentLab() {
           </Tabs>
         </section>
       </main>
-      <SiteFooter />
+      <SiteFooter surface="work" />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-surge",
-  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
   "incident": {
     "status": "real",
     "incident_type": "demand_surge",

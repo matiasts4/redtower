@@ -56,15 +56,12 @@ export function Landing({
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8">{copy.home.body}</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button render={<Link href="/system" />}>
+              <Button nativeButton={false} render={<Link href="/system" />}>
                 {copy.landing.reviews}
                 <ArrowRight />
               </Button>
-              <Button variant="outline" render={<Link href="#cases" />}>
+              <Button variant="outline" nativeButton={false} render={<Link href="#cases" />}>
                 {copy.landing.cases}
-              </Button>
-              <Button variant="ghost" render={<Link href="/components" />}>
-                {copy.landing.components}
               </Button>
             </div>
           </div>
@@ -130,7 +127,7 @@ export function Landing({
                     <TableCell className="font-mono text-sm">{scenario.recommendation.recommended_action}</TableCell>
                     <TableCell className="text-right font-mono">{scenario.recommendation.reduction_percent}%</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="outline" render={<Link href={`/system?file=${scenario.file_id}`} />}>
+                      <Button variant="outline" nativeButton={false} render={<Link href={`/system?file=${scenario.file_id}`} />}>
                         {copy.scenariosPage.open}
                       </Button>
                     </TableCell>
@@ -197,7 +194,7 @@ export function Landing({
             ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button variant="outline" render={<Link href="/system" />}>
+            <Button variant="outline" nativeButton={false} render={<Link href="/system" />}>
               {copy.landing.reviews}
             </Button>
           </div>
@@ -243,12 +240,9 @@ export function Landing({
             </h2>
             <p className="max-w-2xl text-base leading-7 text-bone/80">{copy.landing.ctaBody}</p>
             <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" render={<Link href="/system" />}>
+              <Button variant="secondary" nativeButton={false} render={<Link href="/system" />}>
                 {copy.landing.reviews}
                 <ArrowRight />
-              </Button>
-              <Button className="border-bone/30 bg-transparent text-bone hover:bg-bone hover:text-ink" variant="outline" render={<Link href="/components" />}>
-                {copy.landing.components}
               </Button>
             </div>
           </div>
