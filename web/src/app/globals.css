@@ -90,7 +90,7 @@
   --chart-3: var(--clear);
   --chart-4: var(--ink);
   --chart-5: var(--graphite);
-  --radius: 0.25rem;
+  --radius: 1rem;
   --sidebar: var(--graphite);
   --sidebar-foreground: var(--bone);
   --sidebar-primary: var(--signal);

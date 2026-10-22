@@ -1,124 +1,333 @@
 "use client";
 
-import { useState } from "react";
-import { CaseFile, StatusMark } from "@/components/case-file";
-import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Info, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { chromeCopy, type ChromeLang } from "@/lib/copy";
-import type { ScenarioFile } from "@/lib/scenarios";
-import { Masthead } from "@/components/masthead";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { chromeCopy, corridorStops, type ChromeLang } from "@/lib/copy";
+import type { ScenarioFile, ScenarioId } from "@/lib/scenarios";
 
-const swatches = [
-  ["paper", "bg-paper", "#F4F0E6"],
-  ["ink", "bg-ink", "#1A1814"],
-  ["field", "bg-field", "#E7E1D6"],
-  ["rule", "bg-rule", "#D9D1C3"],
-  ["signal", "bg-signal", "#9E2B1F"],
-  ["clear", "bg-clear", "#2F5D45"],
-  ["hold", "bg-hold", "#8A5A12"],
-  ["graphite", "bg-graphite", "#1C1917"],
-] as const;
+const tone = {
+  real: "bg-signal",
+  insufficient: "bg-hold",
+  clear: "bg-clear",
+} as const;
+
+function count(value: number, lang: ChromeLang) {
+  return new Intl.NumberFormat(lang === "es" ? "es-CL" : "en-US").format(value);
+}
 
 export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
+  const params = useSearchParams();
+  const initial = params.get("file");
   const [lang, setLang] = useState<ChromeLang>("en");
-  const [fileId, setFileId] = useState(scenarios[0]?.file_id ?? "scn-block");
+  const [query, setQuery] = useState("");
+  const [fileId, setFileId] = useState<ScenarioId>(
+    scenarios.some((item) => item.file_id === initial) ? (initial as ScenarioId) : scenarios[0].file_id,
+  );
+  const [showEvidence, setShowEvidence] = useState(true);
   const copy = chromeCopy[lang];
+  const visible = useMemo(
+    () => scenarios.filter((item) => item.file_id.includes(query.trim().toLowerCase())),
+    [scenarios, query],
+  );
   const scenario = scenarios.find((item) => item.file_id === fileId) ?? scenarios[0];
+  const ranked = [...scenario.alternatives].sort(
+    (a, b) => a.passenger_minutes - b.passenger_minutes,
+  );
 
   return (
-    <div>
-      <Masthead lang={lang} onLang={setLang} />
-      <main className="mx-auto grid max-w-6xl gap-16 px-4 py-12 md:px-8">
-        <header className="grid gap-4 md:grid-cols-[1fr_16rem] md:items-end">
-          <div>
-            <p className="font-mono text-xs tracking-[0.18em] uppercase text-signal">
-              {copy.gallery.kicker}
-            </p>
-            <h1 className="mt-3 max-w-3xl font-display text-4xl leading-tight text-balance md:text-6xl">
-              {copy.gallery.title}
-            </h1>
+    <div className="min-h-full bg-field/40">
+      <header className="sticky top-0 z-20 border-b border-rule/80 bg-paper/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 md:px-6">
+          <Link href="/" className="mr-2 text-sm font-medium tracking-[0.14em] uppercase">
+            {copy.masthead.signal}
+          </Link>
+          <div className="relative min-w-56 flex-1">
+            <Search className="pointer-events-none absolute top-3 left-4 size-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={copy.platform.search}
+              className="pl-10"
+              aria-label={copy.platform.search}
+            />
           </div>
-          <p className="text-sm leading-6 text-muted-foreground">{copy.home.cli}</p>
-        </header>
-
-        <section className="grid gap-6 lg:grid-cols-[16rem_1fr]">
-          <div>
-            <h2 className="font-mono text-xs tracking-[0.16em] uppercase text-muted-foreground">
-              {copy.gallery.scenario}
-            </h2>
-            <div className="mt-3 grid gap-2">
+          <Select
+            value={fileId}
+            onValueChange={(value) => {
+              if (value) setFileId(value as ScenarioId);
+            }}
+          >
+            <SelectTrigger className="min-h-11 rounded-full bg-card px-4">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {scenarios.map((item) => (
-                <Button
-                  key={item.file_id}
-                  variant={item.file_id === scenario.file_id ? "default" : "outline"}
-                  className="justify-start font-mono"
-                  onClick={() => setFileId(item.file_id)}
-                >
+                <SelectItem key={item.file_id} value={item.file_id}>
                   {item.file_id}
-                </Button>
+                </SelectItem>
               ))}
-            </div>
-            {scenario.file_id === "scn-block-approved" ? (
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {copy.gallery.approvalVariant}
-              </p>
-            ) : null}
-          </div>
-          <CaseFile scenario={scenario} lang={lang} />
-        </section>
+            </SelectContent>
+          </Select>
+          <Button variant={lang === "en" ? "default" : "outline"} onClick={() => setLang("en")}>
+            EN
+          </Button>
+          <Button variant={lang === "es" ? "default" : "outline"} onClick={() => setLang("es")}>
+            ES
+          </Button>
+        </div>
+      </header>
 
-        <section className="grid gap-10 border-t border-rule pt-12">
-          <h2 className="font-display text-4xl">{copy.gallery.specimens}</h2>
-          <div>
-            <h3 className="font-medium">{copy.palette.label}</h3>
-            <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {swatches.map(([name, tone, hex]) => (
-                <li key={name} className="border border-rule">
-                  <div className={`h-16 ${tone}`} />
-                  <p className="px-3 py-2 font-mono text-xs">
-                    {copy.palette[name]} · {hex}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="grid gap-4 border border-rule p-6">
-            <h3 className="font-medium">{copy.type.label}</h3>
-            <p className="font-display text-4xl">{copy.type.display}</p>
-            <p className="text-lg">{copy.type.ui}</p>
-            <p className="font-mono text-sm">{copy.type.mono}</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <StatusMark status="real" label={copy.status.label} />
-            <StatusMark status="insufficient" label={copy.status.label} />
-            <StatusMark status="clear" label={copy.status.label} />
-          </div>
+      <main className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[220px_1fr] md:px-6">
+        <aside className="grid content-start gap-2">
+          {visible.map((item) => (
+            <button
+              key={item.file_id}
+              type="button"
+              onClick={() => setFileId(item.file_id)}
+              className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-full px-3 text-left text-sm transition-colors duration-200 ${
+                item.file_id === scenario.file_id ? "bg-ink text-bone" : "bg-card hover:bg-paper"
+              }`}
+            >
+              <span className={`size-2.5 rounded-full ${tone[item.incident.status]}`} />
+              <span className="font-mono">{item.file_id}</span>
+            </button>
+          ))}
+        </aside>
+
+        <div className="grid gap-6">
+          <section className="grid gap-4 xl:grid-cols-[1fr_280px]">
+            <Card className="rounded-3xl">
+              <CardHeader className="flex-row items-center justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-field px-3 py-1 text-sm">
+                    <span className={`size-2.5 rounded-full ${tone[scenario.incident.status]}`} />
+                    {scenario.incident.status}
+                  </span>
+                  <Badge variant="outline" className="rounded-full px-3 py-1">
+                    {scenario.incident.incident_type}
+                  </Badge>
+                  <span className="font-mono text-sm text-muted-foreground">{scenario.file_id}</span>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<Button variant="ghost" size="icon" aria-label={copy.trace.label} />}
+                  >
+                    <Info />
+                  </TooltipTrigger>
+                  <TooltipContent>{copy.trace.body}</TooltipContent>
+                </Tooltip>
+              </CardHeader>
+              <CardContent className="grid gap-5">
+                <p className="max-w-3xl text-lg leading-7">{scenario.diagnosis}</p>
+                <p className="text-base">{scenario.recommendation.text}</p>
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{copy.platform.confidence}</span>
+                    <span className="font-mono">{scenario.incident.confidence}</span>
+                  </div>
+                  <Progress value={Math.round(scenario.incident.confidence * 100)} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl bg-graphite text-bone ring-0">
+              <CardHeader>
+                <CardTitle className="text-bone">{copy.approval.label}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-sm leading-6 text-bone/80">
+                  {scenario.authorization === "recorded"
+                    ? copy.approval.recorded
+                    : copy.approval.pending}
+                </p>
+                <div className="flex items-center justify-between rounded-full bg-bone/10 px-4 py-2">
+                  <span className="text-sm">{copy.approval.applied}</span>
+                  <span className="font-mono">false</span>
+                </div>
+                <Switch checked={false} disabled aria-label={copy.platform.applyOff} />
+                <Dialog>
+                  <DialogTrigger render={<Button variant="secondary" className="w-full" />}>
+                    {copy.platform.applyOff}
+                  </DialogTrigger>
+                  <DialogContent className="rounded-3xl">
+                    <DialogHeader>
+                      <DialogTitle>{copy.platform.dialogTitle}</DialogTitle>
+                      <DialogDescription>{copy.platform.dialogBody}</DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              [copy.metric.minutes, count(scenario.recommendation.passenger_minutes, lang)],
+              [copy.recommendation.versus, `${scenario.recommendation.reduction_percent}%`],
+              [copy.metric.passengers, count(scenario.impact.passengers_20, lang)],
+              [copy.metric.stops, String(scenario.impact.stop_count)],
+            ].map(([label, value]) => (
+              <Card key={label} className="rounded-3xl">
+                <CardContent className="grid gap-2 p-5">
+                  <p className="text-sm text-muted-foreground">{label}</p>
+                  <p className="text-3xl leading-none font-medium">{value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </section>
+
+          <Card className="rounded-3xl">
+            <CardContent className="p-2 md:p-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>{copy.actions.label}</TableHead>
+                    <TableHead className="text-right">{copy.metric.minutes}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ranked.map((action, index) => {
+                    const winner = action.action === scenario.recommendation.recommended_action;
+                    return (
+                      <TableRow key={action.action} data-state={winner ? "selected" : undefined}>
+                        <TableCell className="font-mono">{String(index + 1).padStart(2, "0")}</TableCell>
+                        <TableCell>
+                          <span className="font-mono text-sm">{action.action}</span>
+                          {winner ? (
+                            <Badge className="ml-3 rounded-full">{copy.actions.winner}</Badge>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {count(action.passenger_minutes, lang)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
           <div className="flex flex-wrap items-center gap-3">
-            <Button>Default</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="secondary">Secondary</Button>
-            <Button variant="ghost">Ghost</Button>
-            <Badge variant="outline">pending_human</Badge>
-            <Badge>recorded</Badge>
+            <Label className="flex items-center gap-2">
+              <Switch checked={showEvidence} onCheckedChange={setShowEvidence} />
+              {copy.evidence.label}
+            </Label>
+            {showEvidence
+              ? scenario.evidence_ids.map((id) => (
+                  <span key={id} className="rounded-full bg-card px-3 py-1 font-mono text-sm ring-1 ring-foreground/10">
+                    {id}
+                  </span>
+                ))
+              : null}
           </div>
-          <Tabs defaultValue="method">
-            <TabsList className="min-h-11">
-              <TabsTrigger value="method" className="min-h-11 px-4">
-                {copy.trace.label}
+
+          <div className="flex items-center gap-1 overflow-x-auto py-2">
+            {corridorStops.map((stop) => (
+              <span
+                key={stop}
+                className="grid size-9 shrink-0 place-items-center rounded-full bg-card font-mono text-[11px] ring-1 ring-foreground/10"
+                title={stop}
+              >
+                {stop.replace("STOP_", "")}
+              </span>
+            ))}
+          </div>
+
+          <Tabs defaultValue="controls">
+            <TabsList className="h-11 rounded-full">
+              <TabsTrigger value="controls" className="min-h-11 rounded-full px-4">
+                {copy.platform.controls}
               </TabsTrigger>
-              <TabsTrigger value="limits" className="min-h-11 px-4">
-                {copy.limits.label}
+              <TabsTrigger value="shapes" className="min-h-11 rounded-full px-4">
+                {copy.platform.shapes}
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="method" className="pt-4 text-base leading-7">
-              {copy.trace.body}
+            <TabsContent value="controls" className="grid gap-4 pt-4 md:grid-cols-2">
+              <Card className="rounded-3xl">
+                <CardContent className="flex flex-wrap gap-3 p-5">
+                  <Button>Primary</Button>
+                  <Button variant="secondary">Secondary</Button>
+                  <Button variant="outline">Outline</Button>
+                  <Button variant="ghost">Ghost</Button>
+                  <Button variant="destructive">Signal</Button>
+                  <Button disabled>Disabled</Button>
+                </CardContent>
+              </Card>
+              <Card className="rounded-3xl">
+                <CardContent className="grid gap-4 p-5">
+                  <Input placeholder={copy.platform.search} />
+                  <div className="flex items-center gap-3">
+                    <Checkbox defaultChecked />
+                    <Label>{copy.limits.synthetic}</Label>
+                  </div>
+                  <Slider defaultValue={[20]} max={30} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger render={<Button variant="outline" />}>
+                      {copy.gallery.scenario}
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {scenarios.map((item) => (
+                        <DropdownMenuItem key={item.file_id} onClick={() => setFileId(item.file_id)}>
+                          {item.file_id}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardContent>
+              </Card>
             </TabsContent>
-            <TabsContent value="limits" className="pt-4 text-base leading-7">
-              {copy.limits.synthetic}
+            <TabsContent value="shapes" className="grid gap-4 pt-4 sm:grid-cols-4">
+              <div className="grid h-36 place-items-center rounded-full bg-signal text-bone">Pill</div>
+              <div className="grid h-36 place-items-center rounded-3xl bg-ink text-bone">Card</div>
+              <div className="grid h-36 place-items-center rounded-full bg-clear text-bone">Circle</div>
+              <div className="grid h-36 place-items-center rounded-3xl bg-hold text-bone">Hold</div>
             </TabsContent>
           </Tabs>
-        </section>
+        </div>
       </main>
     </div>
   );

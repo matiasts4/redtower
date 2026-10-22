@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-Open `/system` to review type, color, and components against the real scenario files. English is the default chrome. Operator sentences stay in Spanish in both languages.
+`/` is the landing. Display type is allowed there. `/system` is the platform: one UI type, rounded controls, and the checked-in scenarios. English is the default chrome. Operator sentences stay in Spanish in both languages.
 
 ## What this page is not
 
