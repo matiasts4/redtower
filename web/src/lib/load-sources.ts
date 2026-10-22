@@ -23,6 +23,10 @@ function splitCsvLine(line: string): string[] {
   return cells;
 }
 
+export function loadRoutes(): string[] {
+  return (loadTables()["routes.csv"] ?? []).map((row) => row.route_id).sort();
+}
+
 export function loadTables(): Record<string, SourceRow[]> {
   const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../data/sample");
   return Object.fromEntries(

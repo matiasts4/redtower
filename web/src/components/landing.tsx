@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { chromeCopy, corridorName, type ChromeLang } from "@/lib/copy";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { chromeCopy, corridorName } from "@/lib/copy";
+import { useLanguage } from "@/lib/i18n";
 import type { ScenarioFile } from "@/lib/scenarios";
 
-function count(value: number, lang: ChromeLang) {
+function count(value: number, lang: "en" | "es") {
   return new Intl.NumberFormat(lang === "es" ? "es-CL" : "en-US").format(value);
 }
 
@@ -19,33 +21,15 @@ const tone = {
 } as const;
 
 export function Landing({ scenarios }: { scenarios: ScenarioFile[] }) {
-  const [lang, setLang] = useState<ChromeLang>("en");
+  const { lang } = useLanguage();
   const copy = chromeCopy[lang];
   const block = scenarios.find((item) => item.file_id === "scn-block") ?? scenarios[0];
 
   return (
     <div className="min-h-full bg-paper">
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 md:px-8">
-        <Link href="/" className="flex items-baseline gap-3">
-          <span className="font-display text-3xl italic leading-none">{copy.masthead.signal}</span>
-          <span className="text-sm tracking-[0.16em] uppercase">{copy.masthead.product}</span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Button variant={lang === "en" ? "default" : "outline"} onClick={() => setLang("en")}>
-            EN
-          </Button>
-          <Button variant={lang === "es" ? "default" : "outline"} onClick={() => setLang("es")}>
-            ES
-          </Button>
-          <Button render={<Link href="/system" />}>
-            {copy.home.gallery}
-            <ArrowRight />
-          </Button>
-        </div>
-      </header>
-
-      <main className="mx-auto grid max-w-6xl gap-10 px-4 pb-20 md:px-8">
-        <section className="grid items-end gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+      <SiteHeader />
+      <main className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 md:px-8">
+        <section className="grid items-end gap-8 pt-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full bg-field px-3 py-1 text-sm">
               <span className="size-2 rounded-full bg-signal" />
@@ -60,8 +44,8 @@ export function Landing({ scenarios }: { scenarios: ScenarioFile[] }) {
                 {copy.home.gallery}
                 <ArrowRight />
               </Button>
-              <Button variant="outline" render={<Link href="/system?file=scn-block" />}>
-                scn-block
+              <Button variant="outline" render={<Link href="/scenarios" />}>
+                {copy.nav.scenarios}
               </Button>
             </div>
           </div>
@@ -123,8 +107,8 @@ export function Landing({ scenarios }: { scenarios: ScenarioFile[] }) {
             </Link>
           ))}
         </section>
-        <p className="font-mono text-sm text-muted-foreground">{copy.home.cli}</p>
       </main>
+      <SiteFooter />
     </div>
   );
 }

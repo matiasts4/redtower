@@ -16,7 +16,16 @@ npm install
 npm run dev
 ```
 
-`/` is the landing. Display type is allowed there. `/system` is the platform: one UI type, rounded controls, and the checked-in scenarios. English is the default chrome. Operator sentences stay in Spanish in both languages.
+The site is six pages:
+
+- `/` landing
+- `/scenarios` every checked-in file side by side
+- `/corridor` the eighteen stops and four routes
+- `/method` the host-owned run order
+- `/limits` what the product is not
+- `/system` the live console over the checked-in files
+
+English is the default chrome. The language choice is stored in the browser. Operator sentences stay in Spanish in both languages. Display type is allowed on the landing only.
 
 ## What this page is not
 

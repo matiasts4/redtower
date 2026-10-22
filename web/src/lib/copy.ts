@@ -15,6 +15,48 @@ const shared = {
 export const chromeCopy = {
   en: {
     language: { default: "en" as const, en: "English", es: "Español" },
+    nav: {
+      home: "Overview",
+      scenarios: "Scenarios",
+      corridor: "Corridor",
+      method: "Method",
+      limits: "Limits",
+      system: "System",
+    },
+    footer: {
+      line: "Synthetic data. One fictional corridor. A person approves. The program never changes a route.",
+    },
+    scenariosPage: {
+      kicker: "Five operational cases, one blocked approval",
+      title: "Every file, side by side.",
+      body: "The same deterministic host reads each file. Compare the recommended action and the recorded reduction without leaving the site.",
+      scenario: "Scenario",
+      action: "Recommended",
+      reduction: "Reduction",
+      status: "Status",
+      open: "Open case",
+    },
+    corridorPage: {
+      kicker: "One corridor, four routes",
+      title: "Corredor Poniente.",
+      body: "Eighteen stops in order. The files do not list which stops sit inside an impact, so this page does not mark any.",
+      routes: "Routes",
+      stops: "Stops",
+    },
+    methodPage: {
+      kicker: "Method",
+      title: "The host owns the decision.",
+      body: "These are the roles in the checked-in loop. The language-model roles speak after the host has already classified, measured, and ranked. Their prose is discarded.",
+      cannot: "Cannot",
+      role: "Role",
+    },
+    limitsPage: {
+      kicker: "Limits",
+      title: "What this is not.",
+      body: "The product is a reading surface over synthetic files. These limits ship with every scenario file and apply to the site too.",
+      data: "Data",
+      product: "Product",
+    },
     masthead: {
       signal: "RED",
       product: "Control Tower",
@@ -163,6 +205,48 @@ export const chromeCopy = {
   },
   es: {
     language: { default: "en" as const, en: "English", es: "Español" },
+    nav: {
+      home: "Resumen",
+      scenarios: "Escenarios",
+      corridor: "Corredor",
+      method: "Método",
+      limits: "Límites",
+      system: "Sistema",
+    },
+    footer: {
+      line: "Datos sintéticos. Un corredor ficticio. Una persona aprueba. El programa nunca cambia un recorrido.",
+    },
+    scenariosPage: {
+      kicker: "Cinco casos operativos, una aprobación bloqueada",
+      title: "Todos los archivos, lado a lado.",
+      body: "El mismo host determinista lee cada archivo. Compará la acción recomendada y la reducción registrada sin salir del sitio.",
+      scenario: "Escenario",
+      action: "Recomendada",
+      reduction: "Reducción",
+      status: "Estado",
+      open: "Abrir caso",
+    },
+    corridorPage: {
+      kicker: "Un corredor, cuatro recorridos",
+      title: "Corredor Poniente.",
+      body: "Dieciocho paraderos en orden. Los archivos no listan cuáles están dentro de un impacto, así que esta página no marca ninguno.",
+      routes: "Recorridos",
+      stops: "Paraderos",
+    },
+    methodPage: {
+      kicker: "Método",
+      title: "El host es dueño de la decisión.",
+      body: "Estos son los roles del bucle tal como está. Los roles de modelo hablan después de que el host clasificó, midió y ordenó. Su prosa se descarta.",
+      cannot: "No puede",
+      role: "Rol",
+    },
+    limitsPage: {
+      kicker: "Límites",
+      title: "Esto no es.",
+      body: "El producto es una superficie de lectura sobre archivos sintéticos. Estos límites vienen con cada archivo y también aplican al sitio.",
+      data: "Datos",
+      product: "Producto",
+    },
     masthead: {
       signal: "RED",
       product: "Control Tower",
