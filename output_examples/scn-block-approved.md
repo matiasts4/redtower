@@ -1,7 +1,7 @@
 # RED Control Tower result
 
 **Scenario:** scn-block
-**Model:** nvidia/nemotron-3-ultra-550b-a55b
+**Model:** nvidia/nemotron-3.5-super-vl-120b-a12b
 
 ## Diagnosis
 

@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-stopped",
-  "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
   "incident": {
     "status": "real",
     "incident_type": "stopped_bus",
