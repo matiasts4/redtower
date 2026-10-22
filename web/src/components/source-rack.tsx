@@ -32,7 +32,7 @@ export function SourceRack({
   const copy = chromeCopy[lang].platform;
   const [open, setOpen] = useState<SourceSpec | null>(null);
   const rows = open ? rowsFor(tables, open.query, scenarioId) : [];
-  const shown = rows.slice(0, 8);
+  const shown = rows;
 
   return (
     <section className="grid gap-3">
@@ -49,38 +49,58 @@ export function SourceRack({
         ))}
       </div>
       <Dialog open={open !== null} onOpenChange={(next) => !next && setOpen(null)}>
-        <DialogContent className="max-w-3xl rounded-3xl">
+        <DialogContent className="max-w-5xl rounded-3xl">
           {open ? (
             <>
               <DialogHeader>
                 <DialogTitle className="font-mono">{open.query}</DialogTitle>
                 <DialogDescription>
-                  {open.file} · {copy.rows}: {rows.length}
+                  {open.file} · {copy.rows}: {rows.length} · {copy.total}:{" "}
+                  {tables[open.file]?.length ?? rows.length}
                   {open.usedToClassify ? "" : ` · ${copy.loadedOnly}`}
                 </DialogDescription>
               </DialogHeader>
               {open.query === "reports" ? (
                 <p className="text-sm text-signal">{copy.untrusted}</p>
               ) : null}
-              <div className="max-h-80 overflow-auto">
-                <Table>
+              <div className="max-h-[60vh] overflow-auto rounded-xl border border-rule">
+                <Table className="border-collapse">
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="bg-field">
                       {open.columns.map((column) => (
-                        <TableHead key={column}>{column}</TableHead>
+                        <TableHead
+                          key={column}
+                          className="sticky top-0 z-10 border-b border-r border-rule bg-field whitespace-nowrap"
+                        >
+                          {column}
+                        </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {shown.map((row, index) => (
-                      <TableRow key={`${row.scenario_id ?? "all"}-${index}`}>
-                        {open.columns.map((column) => (
-                          <TableCell key={column} className="font-mono text-xs">
-                            {row[column]}
-                          </TableCell>
-                        ))}
+                    {shown.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={open.columns.length} className="text-muted-foreground">
+                          {copy.empty}
+                        </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      shown.map((row, index) => (
+                        <TableRow
+                          key={`${row.scenario_id ?? "all"}-${index}`}
+                          className="hover:bg-paper/70"
+                        >
+                          {open.columns.map((column) => (
+                            <TableCell
+                              key={column}
+                              className="border-b border-r border-rule font-mono text-xs whitespace-nowrap"
+                            >
+                              {row[column]}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

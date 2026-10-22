@@ -44,7 +44,7 @@ export function RunReplay({ lang }: { lang: ChromeLang }) {
       <CardContent className="grid gap-4">
         <ol className="flex gap-2 overflow-x-auto pb-1">
           {RUN_STEPS.map((step, index) => {
-            const state = cursor < 0 ? "waiting" : index < cursor ? "done" : index === cursor ? "running" : "waiting";
+            const state = cursor < 0 ? "idle" : index < cursor ? "done" : index === cursor ? "working" : "idle";
             return (
               <li key={step.id}>
                 <button
@@ -53,17 +53,17 @@ export function RunReplay({ lang }: { lang: ChromeLang }) {
                     setPlaying(false);
                     setCursor(index);
                   }}
-                  className={`flex min-h-11 min-w-28 cursor-pointer flex-col items-start rounded-full px-4 py-2 text-left transition-colors duration-200 ${
-                    state === "running"
-                      ? "bg-ink text-bone"
+                  className={`flex min-h-11 min-w-28 cursor-pointer flex-col items-start rounded-xl border px-4 py-2 text-left transition-colors duration-200 ${
+                    state === "working"
+                      ? "border-hold bg-hold text-bone"
                       : state === "done"
-                        ? "bg-clear text-bone"
-                        : "bg-field text-ink"
+                        ? "border-clear bg-clear text-bone"
+                        : "border-rule bg-field text-ink"
                   }`}
                 >
                   <span className="text-sm font-medium">{step.actor}</span>
-                  <span className="font-mono text-[11px] opacity-80">
-                    {state === "running" ? copy.running : state === "done" ? copy.done : copy.idle}
+                  <span className="font-mono text-[11px] uppercase tracking-wider opacity-80">
+                    {state === "working" ? copy.working : state === "done" ? copy.done : copy.idle}
                   </span>
                 </button>
               </li>
@@ -71,7 +71,7 @@ export function RunReplay({ lang }: { lang: ChromeLang }) {
           })}
         </ol>
         {active ? (
-          <div className="rounded-3xl bg-field px-5 py-4">
+          <div className="rounded-xl border border-rule bg-field px-5 py-4">
             <p className="font-mono text-xs tracking-[0.14em] uppercase text-muted-foreground">
               {active.action} · {active.decides ? copy.decides : copy.explains}
             </p>
