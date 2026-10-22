@@ -46,6 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { chromeCopy, corridorStops, type ChromeLang } from "@/lib/copy";
 import type { ScenarioFile, ScenarioId } from "@/lib/scenarios";
+import { groupEvidence, type SignalKind } from "@/lib/signals";
 
 const tone = {
   real: "bg-signal",
@@ -75,6 +76,12 @@ export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
   const ranked = [...scenario.alternatives].sort(
     (a, b) => a.passenger_minutes - b.passenger_minutes,
   );
+  const signals = groupEvidence(scenario.evidence_ids);
+  const baseline = scenario.recommendation.baseline_passenger_minutes;
+  const remain =
+    baseline === 0
+      ? 0
+      : Math.round((scenario.recommendation.passenger_minutes / baseline) * 100);
 
   return (
     <div className="min-h-full bg-field/40">
@@ -148,6 +155,14 @@ export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
                   <Badge variant="outline" className="rounded-full px-3 py-1">
                     {scenario.incident.incident_type}
                   </Badge>
+                  {scenario.impact.routes.map((route) => (
+                    <span
+                      key={route}
+                      className="rounded-full bg-ink px-3 py-1 font-mono text-sm text-bone"
+                    >
+                      {route}
+                    </span>
+                  ))}
                   <span className="font-mono text-sm text-muted-foreground">{scenario.file_id}</span>
                 </div>
                 <Tooltip>
@@ -202,6 +217,67 @@ export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
             </Card>
           </section>
 
+          <section className="grid gap-4 lg:grid-cols-[280px_1fr]">
+            <Card className="rounded-3xl">
+              <CardHeader>
+                <CardTitle>{copy.platform.waitDamage}</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                <p className="text-4xl leading-none font-medium">
+                  {count(baseline, lang)}
+                </p>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <span>{copy.platform.recommendedShare}</span>
+                  <span className="font-mono text-foreground">{remain}%</span>
+                </div>
+                <Progress value={remain} />
+              </CardContent>
+            </Card>
+            <Card className="rounded-3xl">
+              <CardHeader>
+                <CardTitle>{copy.platform.series}</CardTitle>
+                <p className="text-sm text-muted-foreground">{copy.platform.seriesNote}</p>
+              </CardHeader>
+              <CardContent className="grid gap-2">
+                {(["report", "vehicle", "camera", "road"] as SignalKind[]).map((kind) => (
+                  <div
+                    key={kind}
+                    className="flex min-h-11 flex-wrap items-center gap-2 rounded-full bg-field px-3 py-2"
+                  >
+                    <span className="w-28 text-sm">{copy.platform[kind]}</span>
+                    {signals[kind].length === 0 ? (
+                      <span className="font-mono text-sm text-muted-foreground">—</span>
+                    ) : (
+                      signals[kind].map((id) => (
+                        <span key={id} className="rounded-full bg-card px-2 py-1 font-mono text-xs">
+                          {id}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+
+          <section className="grid gap-3 sm:grid-cols-4">
+            {(
+              [
+                [copy.platform.waiting, scenario.impact.waiting],
+                [copy.platform.arrival, scenario.impact.arrival_per_min],
+                [copy.platform.board, scenario.impact.board_per_min],
+                [copy.platform.moving, scenario.impact.moving_buses],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label} className="flex items-center gap-3 rounded-full bg-card px-4 py-3 ring-1 ring-foreground/10">
+                <span className="grid size-11 place-items-center rounded-full bg-ink font-mono text-sm text-bone">
+                  {value}
+                </span>
+                <span className="text-sm">{label}</span>
+              </div>
+            ))}
+          </section>
+
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
               [copy.metric.minutes, count(scenario.recommendation.passenger_minutes, lang)],
@@ -225,6 +301,8 @@ export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
                   <TableRow>
                     <TableHead>#</TableHead>
                     <TableHead>{copy.actions.label}</TableHead>
+                    <TableHead>{copy.platform.cost}</TableHead>
+                    <TableHead>{copy.platform.risk}</TableHead>
                     <TableHead className="text-right">{copy.metric.minutes}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -239,6 +317,12 @@ export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
                           {winner ? (
                             <Badge className="ml-3 rounded-full">{copy.actions.winner}</Badge>
                           ) : null}
+                        </TableCell>
+                        <TableCell>
+                          <span className="rounded-full bg-field px-2 py-1 text-xs">{action.cost}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="rounded-full bg-field px-2 py-1 text-xs">{action.risk}</span>
                         </TableCell>
                         <TableCell className="text-right font-mono">
                           {count(action.passenger_minutes, lang)}
