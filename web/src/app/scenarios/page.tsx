@@ -1,6 +1,5 @@
-import { ScenariosPage } from "@/components/scenarios-page";
-import { loadScenarios } from "@/lib/scenarios";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <ScenariosPage scenarios={loadScenarios()} />;
+  redirect("/#cases");
 }

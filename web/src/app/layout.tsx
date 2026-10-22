@@ -30,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${publicSans.variable} ${newsreader.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${publicSans.variable} ${newsreader.variable} ${plexMono.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-ink">
         <Providers>{children}</Providers>

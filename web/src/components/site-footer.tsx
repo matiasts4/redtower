@@ -17,11 +17,14 @@ export function SiteFooter() {
             <span className="text-xs tracking-[0.16em] uppercase">{copy.masthead.product}</span>
           </p>
           <div className="flex flex-wrap gap-4 text-sm">
-            <Link href="/method" className="hover:text-bone/70">
+            <Link href="/#method" className="hover:text-bone/70">
               {copy.nav.method}
             </Link>
-            <Link href="/limits" className="hover:text-bone/70">
+            <Link href="/#limits" className="hover:text-bone/70">
               {copy.nav.limits}
+            </Link>
+            <Link href="/components" className="hover:text-bone/70">
+              {copy.nav.components}
             </Link>
             <Link href="/system" className="hover:text-bone/70">
               {copy.nav.system}

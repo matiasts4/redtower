@@ -1,6 +1,5 @@
-import { CorridorPage } from "@/components/corridor-page";
-import { loadRoutes } from "@/lib/load-sources";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <CorridorPage routes={loadRoutes()} />;
+  redirect("/#corridor");
 }

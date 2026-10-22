@@ -1,5 +1,5 @@
-import { MethodPage } from "@/components/method-page";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <MethodPage />;
+  redirect("/#method");
 }

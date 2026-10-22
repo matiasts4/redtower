@@ -1,6 +1,5 @@
-import { LimitsPage } from "@/components/limits-page";
-import { loadScenarios } from "@/lib/scenarios";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <LimitsPage scenarios={loadScenarios()} />;
+  redirect("/#limits");
 }

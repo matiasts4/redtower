@@ -6,6 +6,14 @@ import { Button } from "@/components/ui/button";
 import { chromeCopy } from "@/lib/copy";
 import { useLanguage } from "@/lib/i18n";
 
+const links = [
+  ["home", "/"],
+  ["scenarios", "/#cases"],
+  ["corridor", "/#corridor"],
+  ["method", "/#method"],
+  ["limits", "/#limits"],
+] as const;
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { lang, setLang } = useLanguage();
@@ -21,8 +29,7 @@ export function SiteHeader() {
           <span className="text-xs tracking-[0.16em] uppercase">{copy.masthead.product}</span>
         </Link>
         <nav className="flex flex-1 flex-wrap items-center gap-1">
-          {(["home", "scenarios", "corridor", "method", "limits"] as const).map((key) => {
-            const href = key === "home" ? "/" : `/${key}`;
+          {links.map(([key, href]) => {
             const active = pathname === href;
             return (
               <Link
@@ -36,6 +43,14 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          <Link
+            href="/components"
+            className={`flex min-h-11 items-center rounded-full px-3 text-sm transition-colors duration-200 ${
+              pathname === "/components" ? "bg-ink text-bone" : "text-ink hover:bg-field"
+            }`}
+          >
+            {copy.nav.components}
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <Button variant={lang === "en" ? "default" : "outline"} onClick={() => setLang("en")}>

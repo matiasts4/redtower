@@ -16,14 +16,13 @@ npm install
 npm run dev
 ```
 
-The site is six pages:
+The site has three surfaces:
 
-- `/` landing
-- `/scenarios` every checked-in file side by side
-- `/corridor` the eighteen stops and four routes
-- `/method` the host-owned run order
-- `/limits` what the product is not
-- `/system` the live console over the checked-in files
+- `/` one long landing with anchored sections: proof, cases, corridor, method, limits.
+- `/system` the operating view over the checked-in files.
+- `/components` the component lab. It is not the product.
+
+`/scenarios`, `/corridor`, `/method`, and `/limits` redirect to their landing anchors.
 
 English is the default chrome. The language choice is stored in the browser. Operator sentences stay in Spanish in both languages. Display type is allowed on the landing only.
 
