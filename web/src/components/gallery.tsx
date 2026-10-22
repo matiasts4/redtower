@@ -47,6 +47,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { chromeCopy, corridorStops, type ChromeLang } from "@/lib/copy";
 import type { ScenarioFile, ScenarioId } from "@/lib/scenarios";
 import { groupEvidence, type SignalKind } from "@/lib/signals";
+import type { SourceRow } from "@/lib/sources";
+import { RunReplay } from "@/components/run-replay";
+import { SourceRack } from "@/components/source-rack";
 
 const tone = {
   real: "bg-signal",
@@ -58,7 +61,13 @@ function count(value: number, lang: ChromeLang) {
   return new Intl.NumberFormat(lang === "es" ? "es-CL" : "en-US").format(value);
 }
 
-export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
+export function Gallery({
+  scenarios,
+  tables,
+}: {
+  scenarios: ScenarioFile[];
+  tables: Record<string, SourceRow[]>;
+}) {
   const params = useSearchParams();
   const initial = params.get("file");
   const [lang, setLang] = useState<ChromeLang>("en");
@@ -144,6 +153,8 @@ export function Gallery({ scenarios }: { scenarios: ScenarioFile[] }) {
         </aside>
 
         <div className="grid gap-6">
+          <RunReplay lang={lang} />
+          <SourceRack lang={lang} scenarioId={scenario.scenario_id} tables={tables} />
           <section className="grid gap-4 xl:grid-cols-[1fr_280px]">
             <Card className="rounded-3xl">
               <CardHeader className="flex-row items-center justify-between">
