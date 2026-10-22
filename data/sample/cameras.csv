@@ -1,0 +1,6 @@
+scenario_id,camera_id,segment_id,state
+scn-block,CAM_AV023,SEG_AV023,blocked
+scn-false,CAM_AV023,SEG_AV023,clear
+scn-normal,CAM_AV023,SEG_AV023,clear
+scn-stopped,CAM_AV023,SEG_AV023,clear
+scn-surge,CAM_AV023,SEG_AV023,clear

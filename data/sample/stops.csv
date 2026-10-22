@@ -1,0 +1,19 @@
+stop_id,corridor,corridor_order,latitude,longitude
+STOP_01,Corredor Poniente,1,-33.4501,-70.6501
+STOP_02,Corredor Poniente,2,-33.4510,-70.6490
+STOP_03,Corredor Poniente,3,-33.4520,-70.6480
+STOP_04,Corredor Poniente,4,-33.4530,-70.6470
+STOP_05,Corredor Poniente,5,-33.4540,-70.6460
+STOP_06,Corredor Poniente,6,-33.4550,-70.6450
+STOP_07,Corredor Poniente,7,-33.4560,-70.6440
+STOP_08,Corredor Poniente,8,-33.4570,-70.6430
+STOP_09,Corredor Poniente,9,-33.4580,-70.6420
+STOP_10,Corredor Poniente,10,-33.4590,-70.6410
+STOP_11,Corredor Poniente,11,-33.4600,-70.6400
+STOP_12,Corredor Poniente,12,-33.4610,-70.6390
+STOP_13,Corredor Poniente,13,-33.4620,-70.6380
+STOP_14,Corredor Poniente,14,-33.4630,-70.6370
+STOP_15,Corredor Poniente,15,-33.4640,-70.6360
+STOP_16,Corredor Poniente,16,-33.4650,-70.6350
+STOP_17,Corredor Poniente,17,-33.4660,-70.6340
+STOP_18,Corredor Poniente,18,-33.4670,-70.6330

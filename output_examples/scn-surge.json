@@ -1,0 +1,55 @@
+{
+  "scenario_id": "scn-surge",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "incident": {
+    "status": "real",
+    "incident_type": "demand_surge",
+    "confidence": 0.77,
+    "evidence_ids": []
+  },
+  "impact": {
+    "routes": [
+      "210",
+      "406",
+      "501"
+    ],
+    "stop_count": 4,
+    "passengers_20": 800,
+    "waiting": 200,
+    "arrival_per_min": 30,
+    "board_per_min": 24,
+    "moving_buses": 2
+  },
+  "alternatives": [
+    {
+      "action": "wait",
+      "passenger_minutes": 5140,
+      "cost": "low",
+      "risk": "high"
+    },
+    {
+      "action": "dispatch_relief",
+      "passenger_minutes": 1170,
+      "cost": "high",
+      "risk": "medium"
+    }
+  ],
+  "recommendation": {
+    "recommended_action": "dispatch_relief",
+    "passenger_minutes": 1170,
+    "baseline_passenger_minutes": 5140,
+    "saved": 3970,
+    "reduction_percent": 77,
+    "text": "Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.",
+    "action": "dispatch_relief"
+  },
+  "diagnosis": "El incidente probablemente es real. Afecta a tres recorridos, cuatro paraderos y aproximadamente 800 pasajeros durante los próximos 20 minutos.",
+  "evidence_ids": [],
+  "authorization": "pending_human",
+  "operator_decision": null,
+  "applied": false,
+  "limitations": [
+    "The system does not change routes.",
+    "Recommendations require human approval before any operational change."
+  ]
+}

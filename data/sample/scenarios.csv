@@ -1,0 +1,6 @@
+scenario_id,label,corridor
+scn-normal,Operación habitual,Corredor Poniente
+scn-false,Reporte no confirmado,Corredor Poniente
+scn-block,Bloqueo AV023,Corredor Poniente
+scn-stopped,Bus detenido,Corredor Poniente
+scn-surge,Pico de demanda,Corredor Poniente

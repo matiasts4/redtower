@@ -1,0 +1,6 @@
+{"ts": "2026-10-22T16:14:50.598887+00:00", "role": "planner", "scenario_id": "scn-stopped"}
+{"ts": "2026-10-22T16:14:50.600887+00:00", "role": "diagnostician", "scenario_id": "scn-stopped"}
+{"ts": "2026-10-22T16:14:50.601888+00:00", "role": "scenario", "scenario_id": "scn-stopped"}
+{"ts": "2026-10-22T16:14:50.601888+00:00", "role": "judge", "scenario_id": "scn-stopped"}
+{"ts": "2026-10-22T16:14:50.601888+00:00", "role": "reporter", "scenario_id": "scn-stopped"}
+{"ts": "2026-10-22T16:14:50.602393+00:00", "role": "reporter", "scenario_id": "scn-stopped"}

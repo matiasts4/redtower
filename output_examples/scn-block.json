@@ -1,0 +1,86 @@
+{
+  "scenario_id": "scn-block",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "incident": {
+    "status": "real",
+    "incident_type": "road_block",
+    "confidence": 0.86,
+    "evidence_ids": [
+      "REP_BLK_1",
+      "REP_BLK_2",
+      "REP_BLK_3",
+      "BUS_210_02",
+      "BUS_307_01",
+      "BUS_406_01",
+      "CAM_AV023",
+      "RD_AV023"
+    ]
+  },
+  "impact": {
+    "routes": [
+      "210",
+      "307",
+      "406",
+      "501"
+    ],
+    "stop_count": 9,
+    "passengers_20": 1800,
+    "waiting": 120,
+    "arrival_per_min": 84,
+    "board_per_min": 84,
+    "moving_buses": 7
+  },
+  "alternatives": [
+    {
+      "action": "wait",
+      "passenger_minutes": 2400,
+      "cost": "low",
+      "risk": "high"
+    },
+    {
+      "action": "divert_210",
+      "passenger_minutes": 1560,
+      "cost": "medium",
+      "risk": "medium"
+    },
+    {
+      "action": "dispatch_relief",
+      "passenger_minutes": 1716,
+      "cost": "high",
+      "risk": "medium"
+    },
+    {
+      "action": "relief_and_divert_210",
+      "passenger_minutes": 1488,
+      "cost": "high",
+      "risk": "medium"
+    }
+  ],
+  "recommendation": {
+    "recommended_action": "relief_and_divert_210",
+    "passenger_minutes": 1488,
+    "baseline_passenger_minutes": 2400,
+    "saved": 912,
+    "reduction_percent": 38,
+    "text": "Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. Esta opción reduce el impacto estimado en 38% frente a esperar.",
+    "action": "relief_and_divert_210"
+  },
+  "diagnosis": "El incidente probablemente es real. Afecta a cuatro recorridos, nueve paraderos y aproximadamente 1.800 pasajeros durante los próximos 20 minutos.",
+  "evidence_ids": [
+    "REP_BLK_1",
+    "REP_BLK_2",
+    "REP_BLK_3",
+    "BUS_210_02",
+    "BUS_307_01",
+    "BUS_406_01",
+    "CAM_AV023",
+    "RD_AV023"
+  ],
+  "authorization": "pending_human",
+  "operator_decision": null,
+  "applied": false,
+  "limitations": [
+    "The system does not change routes.",
+    "Recommendations require human approval before any operational change."
+  ]
+}

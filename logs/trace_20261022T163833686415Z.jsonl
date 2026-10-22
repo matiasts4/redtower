@@ -1,0 +1,5 @@
+{"ts": "2026-10-22T16:39:27.152768+00:00", "role": "planner", "scenario_id": "scn-block"}
+{"ts": "2026-10-22T16:40:20.857544+00:00", "role": "diagnostician", "scenario_id": "scn-block"}
+{"ts": "2026-10-22T16:41:14.828303+00:00", "role": "scenario", "scenario_id": "scn-block"}
+{"ts": "2026-10-22T16:42:00.196717+00:00", "role": "judge", "scenario_id": "scn-block"}
+{"ts": "2026-10-22T16:42:54.257512+00:00", "role": "reporter", "scenario_id": "scn-block"}

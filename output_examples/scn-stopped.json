@@ -1,0 +1,57 @@
+{
+  "scenario_id": "scn-stopped",
+  "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "incident": {
+    "status": "real",
+    "incident_type": "stopped_bus",
+    "confidence": 0.81,
+    "evidence_ids": [
+      "BUS_210_04"
+    ]
+  },
+  "impact": {
+    "routes": [
+      "210"
+    ],
+    "stop_count": 4,
+    "passengers_20": 240,
+    "waiting": 40,
+    "arrival_per_min": 10,
+    "board_per_min": 0,
+    "moving_buses": 0
+  },
+  "alternatives": [
+    {
+      "action": "wait",
+      "passenger_minutes": 2700,
+      "cost": "low",
+      "risk": "high"
+    },
+    {
+      "action": "dispatch_relief",
+      "passenger_minutes": 234,
+      "cost": "high",
+      "risk": "medium"
+    }
+  ],
+  "recommendation": {
+    "recommended_action": "dispatch_relief",
+    "passenger_minutes": 234,
+    "baseline_passenger_minutes": 2700,
+    "saved": 2466,
+    "reduction_percent": 91,
+    "text": "Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.",
+    "action": "dispatch_relief"
+  },
+  "diagnosis": "El incidente probablemente es real. Afecta a un recorridos, cuatro paraderos y aproximadamente 240 pasajeros durante los próximos 20 minutos.",
+  "evidence_ids": [
+    "BUS_210_04"
+  ],
+  "authorization": "pending_human",
+  "operator_decision": null,
+  "applied": false,
+  "limitations": [
+    "The system does not change routes.",
+    "Recommendations require human approval before any operational change."
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "scenario_id": "scn-false",
+  "model": "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "incident": {
+    "status": "insufficient",
+    "incident_type": "unconfirmed",
+    "confidence": 0.24,
+    "evidence_ids": [
+      "REP_FALSE_1"
+    ]
+  },
+  "impact": {
+    "routes": [],
+    "stop_count": 0,
+    "passengers_20": 0,
+    "waiting": 0,
+    "arrival_per_min": 0,
+    "board_per_min": 0,
+    "moving_buses": 0
+  },
+  "alternatives": [
+    {
+      "action": "hold",
+      "passenger_minutes": 0,
+      "cost": "low",
+      "risk": "low"
+    }
+  ],
+  "recommendation": {
+    "recommended_action": "hold",
+    "passenger_minutes": 0,
+    "baseline_passenger_minutes": 0,
+    "saved": 0,
+    "reduction_percent": 0,
+    "text": "Evidencia insuficiente. No recomiendo modificar la operación.",
+    "action": "hold"
+  },
+  "diagnosis": "Evidencia insuficiente. No recomiendo modificar la operación.",
+  "evidence_ids": [
+    "REP_FALSE_1"
+  ],
+  "authorization": "pending_human",
+  "operator_decision": null,
+  "applied": false,
+  "limitations": [
+    "The system does not change routes.",
+    "Recommendations require human approval before any operational change."
+  ]
+}

@@ -1,0 +1,2 @@
+scenario_id,event_id,segment_id,type,severity
+scn-block,RD_AV023,SEG_AV023,road_block,high
