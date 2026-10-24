@@ -1,14 +1,39 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bus, Gauge, Search } from "lucide-react";
+import {
+  Bus,
+  Gauge,
+  Search,
+  Sparkles,
+  Database,
+  Play,
+  LoaderCircle,
+  CheckCircle2,
+  Lock,
+  UserCheck,
+  ShieldCheck,
+} from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { TraceLog } from "@/components/trace-log";
+import { LiveRun } from "@/components/live-run";
 import { SourceRack } from "@/components/source-rack";
-import { ApprovalCard, DamageComparison, Instrument, RankTable, SentenceBlock, SignalLane, StatusMark, statusDot } from "@/components/ops";
+import { CorridorMap } from "@/components/corridor-map";
+import { QueueChart } from "@/components/queue-chart";
+import {
+  ApprovalCard,
+  DamageComparison,
+  Instrument,
+  RankTable,
+  SentenceBlock,
+  SignalLane,
+  StatusMark,
+  statusDot,
+} from "@/components/ops";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +48,7 @@ import { Switch } from "@/components/ui/switch";
 import { chromeCopy } from "@/lib/copy";
 import { useLanguage } from "@/lib/i18n";
 import { runViews } from "@/lib/replay";
+import type { RealTraceStep } from "@/lib/load-trace";
 import type { ScenarioFile, ScenarioId } from "@/lib/scenarios";
 import { SOURCES, rowsFor, type SourceRow } from "@/lib/sources";
 import { groupEvidence, type SignalKind } from "@/lib/signals";
@@ -34,9 +60,11 @@ function count(value: number, lang: "en" | "es") {
 export function Console({
   scenarios,
   tables,
+  traces,
 }: {
   scenarios: ScenarioFile[];
   tables: Record<string, SourceRow[]>;
+  traces?: Record<string, RealTraceStep[]>;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -51,7 +79,16 @@ export function Console({
     () => scenarios.filter((item) => item.file_id.includes(query.trim().toLowerCase())),
     [scenarios, query],
   );
-  const scenario = scenarios.find((item) => item.file_id === fileId) ?? scenarios[0];
+
+  // Current scenario, with potential live override
+  const baseScenario = scenarios.find((item) => item.file_id === fileId) ?? scenarios[0];
+  const [liveScenarioOverride, setLiveScenarioOverride] = useState<Record<string, ScenarioFile>>({});
+  const [runMode, setRunMode] = useState<"live" | "sample">("sample");
+  const scenario =
+    runMode === "live"
+      ? liveScenarioOverride[baseScenario.file_id] || baseScenario
+      : baseScenario;
+
   const signals = groupEvidence(scenario.evidence_ids);
   const counts = useMemo(
     () =>
@@ -60,7 +97,236 @@ export function Console({
       ),
     [tables, scenario.scenario_id],
   );
-  const views = useMemo(() => runViews(scenario, counts), [scenario, counts]);
+
+  // Execution state
+  const [isRunning, setIsRunning] = useState(false);
+  const [runElapsed, setRunElapsed] = useState(0);
+  const [liveStreamTrace, setLiveStreamTrace] = useState<Record<string, RealTraceStep[]>>({});
+
+  const [liveReady, setLiveReady] = useState(false);
+  const [runError, setRunError] = useState<string | null>(null);
+  const runToken = useRef(0);
+
+  useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((data) => {
+        const ready = data?.live_ready === true;
+        setLiveReady(ready);
+        if (!ready) setRunMode("sample");
+      })
+      .catch(() => {
+        setLiveReady(false);
+        setRunMode("sample");
+      });
+  }, []);
+
+  useEffect(() => {
+    if (runMode !== "live") return;
+    const token = runToken.current;
+    let cancel = false;
+    fetch(`/api/last-run?scenario_id=${encodeURIComponent(fileId)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (cancel || token !== runToken.current || !data?.found || !data.result) return;
+        setLiveScenarioOverride((prev) => (prev[fileId] ? prev : { ...prev, [fileId]: data.result }));
+        setLiveStreamTrace((prev) =>
+          prev[fileId]?.length ? prev : { ...prev, [fileId]: data.steps || [] },
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      cancel = true;
+    };
+  }, [runMode, fileId]);
+
+  // Timer while running
+  useEffect(() => {
+    if (!isRunning) return;
+    const start = Date.now();
+    const interval = setInterval(() => {
+      setRunElapsed(Math.round((Date.now() - start) / 100) / 10);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  const fallbackViews = useMemo(() => runViews(baseScenario, counts), [baseScenario, counts]);
+  const views =
+    runMode === "live"
+      ? liveStreamTrace[baseScenario.file_id] || []
+      : traces?.[baseScenario.file_id] || traces?.[baseScenario.scenario_id] || fallbackViews;
+
+  // Operator approval modal state
+  const [operatorName, setOperatorName] = useState("Operador Control Tower");
+  const [approvalOpen, setApprovalOpen] = useState(false);
+  const [approvalFeedback, setApprovalFeedback] = useState<string | null>(null);
+
+  async function handleApproval(decision: "approve" | "reject") {
+    try {
+      const res = await fetch("/api/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scenario_id: scenario.scenario_id,
+          operator_name: operatorName,
+          decision,
+          reason:
+            decision === "approve"
+              ? `Aprobación de la recomendación: ${scenario.recommendation.recommended_action}`
+              : "Rechazo operativo preventivo",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLiveScenarioOverride((prev) => ({
+          ...prev,
+          [scenario.file_id]: {
+            ...scenario,
+            authorization: "recorded",
+            operator_decision: data.operator_decision,
+            applied: false,
+          },
+        }));
+        setApprovalFeedback(
+          decision === "approve"
+            ? `Decisión 'approve' registrada para ${operatorName}. applied permanece en false.`
+            : `Decisión 'reject' registrada para ${operatorName}. applied permanece en false.`,
+        );
+        setTimeout(() => {
+          setApprovalOpen(false);
+          setApprovalFeedback(null);
+        }, 1500);
+      }
+    } catch (err: any) {
+      setApprovalFeedback(`Error registrando aprobación: ${err.message}`);
+    }
+  }
+
+  // Trigger live or sample execution via SSE
+  async function triggerRun() {
+    if (runMode === "live" && !liveReady) return;
+    runToken.current += 1;
+    setIsRunning(true);
+    setRunElapsed(0);
+    setRunError(null);
+    setLiveStreamTrace((prev) => ({ ...prev, [scenario.file_id]: [] }));
+    setLiveScenarioOverride((prev) => {
+      const next = { ...prev };
+      delete next[scenario.file_id];
+      return next;
+    });
+
+    try {
+      const response = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scenario_id: scenario.scenario_id,
+          mode: runMode,
+        }),
+      });
+
+      if (!response.body) return;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buf = "";
+      let stderr = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const events = buf.split(/\r?\n\r?\n/);
+        buf = events.pop() || "";
+
+        for (const evt of events) {
+          const line = evt.replace(/^data:\s*/, "").trim();
+          if (!line) continue;
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.event === "final_result" && parsed.data) {
+              setLiveScenarioOverride((prev) => ({
+                ...prev,
+                [scenario.file_id]: {
+                  ...parsed.data,
+                  file_id: scenario.file_id,
+                  applied: false,
+                },
+              }));
+            } else if (parsed.event === "stderr" || parsed.event === "error") {
+              stderr = String(parsed.message || copy.platform.runFailed);
+            } else if (parsed.event === "done" && parsed.exit_code !== 0) {
+              setRunError(stderr || `${copy.platform.runFailed} (${parsed.exit_code})`);
+            } else if (parsed.role) {
+              const displayStep: RealTraceStep = {
+                id: (parsed.action === "load_sources"
+                  ? "load"
+                  : parsed.action === "rank_alternatives"
+                    ? "rank"
+                    : parsed.role) as any,
+                actor: parsed.agent_name || parsed.role,
+                action: parsed.action || parsed.role,
+                decides: parsed.role === "host",
+                summary: (parsed.output_summary || "").slice(0, 70).replace(/\s+/g, " "),
+                lines: [
+                  `[${parsed.timestamp}] ${parsed.role} (${parsed.action})`,
+                  `model: ${parsed.model}`,
+                  `status: ${parsed.status}${parsed.retry_count > 0 ? ` (retry ${parsed.retry_count})` : ""}`,
+                  `duration: ${parsed.duration_ms ? `${(parsed.duration_ms / 1000).toFixed(1)}s` : "<0.1s"}`,
+                  "--- input summary ---",
+                  parsed.input_summary || "",
+                  "--- output ---",
+                  parsed.output_summary || "",
+                ],
+                timestamp: parsed.timestamp,
+                model: parsed.model,
+                durationMs: parsed.duration_ms,
+                inputSummary: parsed.input_summary,
+                outputRaw: parsed.output_summary,
+                targetAgent: parsed.target_agent,
+                retryCount: parsed.retry_count,
+                status: parsed.status,
+                isReal: true,
+              };
+
+              setLiveStreamTrace((prev) => ({
+                ...prev,
+                [scenario.file_id]: [...(prev[scenario.file_id] || []), displayStep],
+              }));
+            }
+          } catch {}
+        }
+      }
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
+  // Evidence lookup details from CSVs
+  const evidenceDetails = useMemo(() => {
+    const details: Record<string, string> = {};
+    for (const r of tables["user_reports.csv"] || []) {
+      if (r.scenario_id === scenario.scenario_id && r.report_id) {
+        details[r.report_id] = `Reporte: "${r.description}" (Recibido: ${r.reported_at})`;
+      }
+    }
+    for (const p of tables["vehicle_positions.csv"] || []) {
+      if (p.scenario_id === scenario.scenario_id && p.vehicle_id) {
+        details[p.vehicle_id] = `Bus ${p.vehicle_id} · Recorrido ${p.route_id} · Vel: ${p.speed_kmh} km/h · Paradero: ${p.nearest_stop}`;
+      }
+    }
+    for (const c of tables["cameras.csv"] || []) {
+      if (c.scenario_id === scenario.scenario_id && c.camera_id) {
+        details[c.camera_id] = `Cámara ${c.camera_id} · Estado: '${c.state}' en ${c.intersection}`;
+      }
+    }
+    for (const re of tables["road_events.csv"] || []) {
+      if (re.scenario_id === scenario.scenario_id && re.event_id) {
+        details[re.event_id] = `Evento vial ${re.event_id}: ${re.type} · Severidad: ${re.severity} en ${re.intersection}`;
+      }
+    }
+    return details;
+  }, [tables, scenario.scenario_id]);
 
   function select(next: ScenarioId) {
     setFileId(next);
@@ -71,20 +337,104 @@ export function Console({
     <div className="min-h-full bg-paper">
       <SiteHeader surface="work" />
       <main className="mx-auto grid max-w-7xl gap-4 px-4 py-6 md:px-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
+        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-rule pb-4">
           <div>
-            <p className="font-mono text-xs tracking-[0.18em] uppercase text-signal">{copy.masthead.reading}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-mono text-xs tracking-[0.18em] uppercase text-signal">{copy.masthead.reading}</p>
+              {runMode === "live" ? (
+                <Badge className="bg-signal/15 text-signal border-signal/30 font-mono text-[11px] gap-1">
+                  <Sparkles className="size-3" /> LIVE · Zetaris + NVIDIA Nemotron
+                </Badge>
+              ) : (
+                <Badge className="bg-field text-muted-foreground border-rule font-mono text-[11px] gap-1">
+                  <Database className="size-3" /> SAMPLE · SQLite + Fixture
+                </Badge>
+              )}
+            </div>
             <h1 className="mt-2 font-mono text-3xl leading-none">{scenario.file_id}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
               {copy.gallery.scenario} {scenario.scenario_id}
+              {scenario.trace_file ? (
+                <span className="font-mono text-xs ml-2 text-muted-foreground">({scenario.trace_file})</span>
+              ) : null}
             </p>
           </div>
           <div className="max-w-sm text-right">
             <p className="text-xs tracking-[0.14em] uppercase text-muted-foreground">{copy.platform.modelId}</p>
-            <p className="mt-1 font-mono text-sm break-all">{scenario.model}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{copy.platform.fileNote}</p>
+            <p className="mt-1 font-mono text-sm break-all font-semibold">
+              {runMode === "live" ? (liveScenarioOverride[baseScenario.file_id]?.model ?? copy.platform.liveModelWaiting) : scenario.model}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {runMode === "live" ? copy.platform.liveNote : copy.platform.fileNote}
+            </p>
+            {(runMode === "sample" || liveScenarioOverride[baseScenario.file_id]) && scenario.explanation_source ? (
+              <p className="mt-1 font-mono text-xs text-muted-foreground">
+                {scenario.explanation_source}
+                {scenario.query_source ? ` · ${scenario.query_source}` : ""}
+                {scenario.classification_source ? ` · ${scenario.classification_source}` : ""}
+              </p>
+            ) : null}
           </div>
         </header>
+
+        {/* Live Execution & Connectivity Control Bar */}
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rule bg-card px-4 py-3 shadow-xs">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-mono">MODO:</span>
+              <button
+                type="button"
+                onClick={() => setRunMode("sample")}
+                className={`cursor-pointer rounded-full px-3 py-1 font-mono text-xs transition-colors ${
+                  runMode === "sample"
+                    ? "bg-ink text-bone font-bold"
+                    : "bg-field text-ink hover:bg-field/80 border border-rule"
+                }`}
+              >
+                Sample (SQLite + CSV)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (liveReady) setRunMode("live");
+                }}
+                disabled={!liveReady}
+                className={`rounded-full px-3 py-1 font-mono text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  runMode === "live"
+                    ? "bg-signal text-bone font-bold"
+                    : "cursor-pointer bg-field text-ink hover:bg-field/80 border border-rule"
+                }`}
+              >
+                {copy.platform.runLive}
+              </button>
+            </div>
+
+            {liveReady ? null : (
+              <p className="text-xs text-hold">{copy.platform.liveUnavailable}</p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={triggerRun}
+              disabled={isRunning || (runMode === "live" && !liveReady)}
+              className="gap-2 bg-signal hover:bg-signal/90 text-white min-h-10 cursor-pointer"
+            >
+              {isRunning ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  {runMode === "live" ? copy.platform.runningLive : copy.platform.runningSample} ({runElapsed.toFixed(1)}s)
+                </>
+              ) : (
+                <>
+                  <Play className="size-4 fill-current" />
+                  {runMode === "live" ? copy.platform.runLive : copy.platform.runSample} ({scenario.scenario_id})
+                </>
+              )}
+            </Button>
+          </div>
+          {runError ? <p className="w-full text-sm text-signal">{runError}</p> : null}
+        </section>
 
         <div className="grid gap-3">
           <div className="relative max-w-xs">
@@ -124,6 +474,52 @@ export function Console({
           ) : null}
         </div>
 
+        {runMode === "live" ? (
+          <div className="grid gap-4">
+            <LiveRun
+              lang={lang}
+              steps={liveStreamTrace[baseScenario.file_id] || []}
+              running={isRunning}
+              elapsed={runElapsed}
+            />
+            {liveScenarioOverride[baseScenario.file_id] && !isRunning ? (
+              <section className="grid gap-4 rounded-xl border border-rule bg-card p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-medium">{copy.platform.liveResult}</h2>
+                  <StatusMark status={scenario.incident.status} />
+                  <span className="rounded-full border border-rule px-3 py-1 font-mono text-sm">
+                    {scenario.incident.incident_type}
+                  </span>
+                </div>
+                <SentenceBlock
+                  label={copy.sentence.label}
+                  note={copy.sentence.note}
+                  text={scenario.diagnosis}
+                  tone="signal"
+                />
+                <SentenceBlock label={copy.recommendation.label} text={scenario.recommendation.text} tone="clear" />
+                <DamageComparison
+                  unit={copy.metric.minutes}
+                  versus={copy.recommendation.versus}
+                  waitLabel={copy.platform.waitDamage}
+                  choiceLabel={copy.recommendation.label}
+                  savedLabel={copy.platform.saved}
+                  reductionLabel={copy.platform.reduction}
+                  wait={scenario.recommendation.baseline_passenger_minutes}
+                  choice={scenario.recommendation.passenger_minutes}
+                  saved={scenario.recommendation.saved}
+                  reduction={scenario.recommendation.reduction_percent}
+                  format={(value) => count(value, lang)}
+                />
+                <p className="font-mono text-xs text-muted-foreground">{copy.platform.liveApplied}</p>
+              </section>
+            ) : null}
+          </div>
+        ) : (
+        <>
+        {/* Spatial corridor map */}
+        <CorridorMap scenario={scenario} tables={tables} />
+
         <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="grid gap-4">
             <section className="grid gap-4 rounded-xl border border-rule bg-card p-4">
@@ -143,6 +539,23 @@ export function Console({
                   {scenario.incident.confidence}
                 </span>
               </div>
+              {scenario.scenario_id === "scn-false" || scenario.evidence_ids.includes("REP_FALSE_1") ? (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-sm">
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold mb-1">
+                    <ShieldCheck className="size-4 shrink-0" />
+                    <span>{copy.platform.injectionTitle}</span>
+                    <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400 text-[10px] ml-auto">
+                      {copy.platform.injectionBadge}
+                    </Badge>
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed mb-2">
+                    {copy.platform.injectionDesc}
+                  </p>
+                  <p className="font-mono text-[11px] text-amber-700 dark:text-amber-300 bg-amber-500/15 rounded px-2 py-1">
+                    {copy.platform.injectionCorroboration}
+                  </p>
+                </div>
+              ) : null}
               <SentenceBlock
                 label={copy.sentence.label}
                 note={copy.sentence.note}
@@ -167,6 +580,10 @@ export function Console({
                 {copy.metric.routes} {scenario.impact.routes.length} · {copy.metric.stops} {scenario.impact.stop_count} · {copy.metric.passengers} {count(scenario.impact.passengers_20, lang)}
               </p>
             </section>
+
+            {/* Queue depletion simulation curve */}
+            <QueueChart scenario={scenario} />
+
             <section className="grid gap-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
                 <h2 className="text-sm font-medium">{copy.actions.label}</h2>
@@ -202,20 +619,85 @@ export function Console({
                     <Label htmlFor="apply-lock">{copy.platform.applyOff}</Label>
                     <Switch id="apply-lock" checked={false} disabled aria-label={copy.platform.applyOff} />
                   </div>
-                  <Dialog>
-                    <DialogTrigger render={<Button variant="outline" className="w-full" />}>
-                      {copy.platform.whyOff}
+
+                  <Dialog open={approvalOpen} onOpenChange={setApprovalOpen}>
+                    <DialogTrigger
+                      render={
+                        <Button
+                          variant={scenario.authorization === "recorded" ? "outline" : "default"}
+                          className="w-full gap-2 cursor-pointer font-medium"
+                        />
+                      }
+                    >
+                      <UserCheck className="size-4" />
+                      {scenario.authorization === "recorded"
+                        ? "Modificar Decisión de Operador"
+                        : "Registrar Aprobación de Operador"}
                     </DialogTrigger>
-                    <DialogContent className="rounded-xl">
+                    <DialogContent className="rounded-xl max-w-md">
                       <DialogHeader>
-                        <DialogTitle>{copy.platform.dialogTitle}</DialogTitle>
-                        <DialogDescription>{copy.platform.dialogBody}</DialogDescription>
+                        <DialogTitle className="flex items-center gap-2">
+                          <ShieldCheck className="size-5 text-signal" />
+                          Compuerta de Aprobación Operativa
+                        </DialogTitle>
+                        <DialogDescription>
+                          El agente recomienda:{" "}
+                          <strong className="text-ink font-mono">
+                            {scenario.recommendation.recommended_action}
+                          </strong>
+                          . Esta decisión se registra formalmente en la auditoría sin despacho autónomo.
+                        </DialogDescription>
                       </DialogHeader>
+
+                      <div className="grid gap-4 py-2">
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="op-name">Nombre / ID del Operador</Label>
+                          <Input
+                            id="op-name"
+                            value={operatorName}
+                            onChange={(e) => setOperatorName(e.target.value)}
+                            placeholder="Ej. Juan Pérez - Turno Poniente"
+                          />
+                        </div>
+
+                        {approvalFeedback && (
+                          <div className="rounded-md bg-clear/15 p-2.5 text-xs text-clear font-medium flex items-center gap-2">
+                            <CheckCircle2 className="size-4 shrink-0" />
+                            {approvalFeedback}
+                          </div>
+                        )}
+
+                        <div className="rounded-md bg-field p-3 text-xs text-muted-foreground border border-rule">
+                          <p className="flex items-center gap-1 font-semibold text-ink mb-1">
+                            <Lock className="size-3.5 text-signal" /> Garantía de Seguridad:
+                          </p>
+                          La aprobación se graba en <code className="font-mono">logs/approvals.jsonl</code>. El
+                          sistema mantiene <code className="font-mono">applied = false</code> y nunca desvía una ruta
+                          por sí mismo.
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            onClick={() => handleApproval("approve")}
+                            className="flex-1 bg-clear hover:bg-clear/90 text-white cursor-pointer"
+                          >
+                            Aprobar Acción
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleApproval("reject")}
+                            className="flex-1 border-hold/40 text-hold hover:bg-hold/10 cursor-pointer"
+                          >
+                            Rechazar
+                          </Button>
+                        </div>
+                      </div>
                     </DialogContent>
                   </Dialog>
                 </div>
               }
             />
+
             <section className="grid gap-2">
               <h2 className="px-1 text-sm font-medium">{copy.platform.rates}</h2>
               <div className="grid grid-cols-2 gap-2">
@@ -234,12 +716,21 @@ export function Console({
             <p className="text-sm text-muted-foreground">{copy.platform.seriesNote}</p>
           </header>
           {( ["report", "vehicle", "camera", "road"] as SignalKind[]).map((kind) => (
-            <SignalLane key={kind} kind={kind} label={copy.platform[kind]} ids={signals[kind]} empty={copy.platform.notCited} />
+            <SignalLane
+              key={kind}
+              kind={kind}
+              label={copy.platform[kind]}
+              ids={signals[kind]}
+              empty={copy.platform.notCited}
+              details={evidenceDetails}
+            />
           ))}
         </section>
 
         <TraceLog lang={lang} views={views} fileId={scenario.file_id} />
         <SourceRack lang={lang} scenarioId={scenario.scenario_id} tables={tables} />
+        </>
+        )}
       </main>
       <SiteFooter surface="work" />
     </div>

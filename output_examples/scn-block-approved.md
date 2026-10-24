@@ -1,7 +1,7 @@
 # RED Control Tower result
 
 **Scenario:** scn-block
-**Model:** nvidia/nemotron-3.5-super-vl-120b-a12b
+**Model:** fixture
 
 ## Diagnosis
 
@@ -9,11 +9,12 @@ El incidente probablemente es real. Afecta a cuatro recorridos, nueve paraderos 
 
 ## Recommendation
 
-Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. Esta opción reduce el impacto estimado en 38% frente a esperar.
+Con la evidencia REP_BLK_1, la opción recomendada reduce 1488 minutos-pasajero en 20 minutos (38% vs esperar).
 
 - **Action:** relief_and_divert_210
 - **Passenger-minutes (20 min):** 1488
 - **Reduction vs baseline:** 38%
+- **Explanation source:** reporter
 
 ## Alternatives
 

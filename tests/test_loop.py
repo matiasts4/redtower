@@ -6,7 +6,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.fixture import FixtureModel
+from app.fixture import (
+    DiagnosticianRejectThenAgreeFixture,
+    FixtureModel,
+    JudgeWaitFixture,
+    PlannerHostFallbackFixture,
+    PlannerRejectThenValidFixture,
+)
 from app.loop import run_scenario
 from app.store import SampleSource
 from app.trace import Tracer
@@ -19,17 +25,17 @@ class LoopTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = SampleSource()
 
-    def _run(self, scenario_id: str, approved: bool = False):
-        model = FixtureModel()
+    def _run(self, scenario_id: str, approved: bool = False, model=None):
+        model = model or FixtureModel()
         trace_file = Path(tempfile.gettempdir()) / f"redtower-loop-{scenario_id}.jsonl"
         tracer = Tracer(trace_file, echo=False)
         result = run_scenario(
             scenario_id, self.source, model, tracer, approved=approved
         )
-        return result, model
+        return result, model, trace_file
 
     def test_scn_block_recommendation(self):
-        result, model = self._run("scn-block")
+        result, model, _ = self._run("scn-block")
         rec = result["recommendation"]
         self.assertEqual(rec["action"], "relief_and_divert_210")
         self.assertEqual(rec["passenger_minutes"], 1488)
@@ -40,15 +46,18 @@ class LoopTests(unittest.TestCase):
             "nueve paraderos y aproximadamente 1.800 pasajeros durante los "
             "próximos 20 minutos.",
         )
-        self.assertEqual(
-            rec["text"],
-            "Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. "
-            "Esta opción reduce el impacto estimado en 38% frente a esperar.",
-        )
+        self.assertIn("REP_BLK_1", rec["text"])
+        self.assertIn("1488", rec["text"])
+        self.assertIn("38", rec["text"])
+        self.assertEqual(result["explanation_source"], "reporter")
+        self.assertEqual(result["query_source"], "planner")
+        self.assertEqual(result["classification_source"], "agreed")
+        self.assertTrue(result["judge_agreed"])
         self.assertFalse(result["applied"])
         self.assertEqual(result["authorization"], "pending_human")
         self.assertEqual(result["model"], "fixture")
         self.assertNotEqual(rec["action"], "wait")
+        self.assertEqual(model.reporter_calls, 2)
         trace_file = Path(tempfile.gettempdir()) / "redtower-loop-scn-block.jsonl"
         rows = [
             json.loads(line)
@@ -67,7 +76,7 @@ class LoopTests(unittest.TestCase):
         )
 
     def test_scn_false_insufficient(self):
-        result, _ = self._run("scn-false")
+        result, _model, _ = self._run("scn-false")
         self.assertIn(
             "Evidencia insuficiente. No recomiendo modificar la operación.",
             result["recommendation"]["text"],
@@ -76,7 +85,7 @@ class LoopTests(unittest.TestCase):
         self.assertNotIn("divert", result["recommendation"]["text"].lower())
 
     def test_scn_block_approve(self):
-        result, _ = self._run("scn-block", approved=True)
+        result, _, _ = self._run("scn-block", approved=True)
         self.assertEqual(result["authorization"], "recorded")
         self.assertEqual(result["operator_decision"], "approve")
         self.assertFalse(result["applied"])
@@ -135,6 +144,46 @@ class LoopTests(unittest.TestCase):
         finally:
             out_file.unlink(missing_ok=True)
             md_file.unlink(missing_ok=True)
+
+    def test_planner_reject_then_valid(self):
+        result, _model, trace_file = self._run(
+            "scn-block", model=PlannerRejectThenValidFixture()
+        )
+        self.assertEqual(result["query_source"], "planner")
+        rows = [
+            json.loads(line)
+            for line in trace_file.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertTrue(any(row.get("action") == "reject_queries" for row in rows))
+
+    def test_planner_host_fallback(self):
+        result, _model, _ = self._run(
+            "scn-block", model=PlannerHostFallbackFixture()
+        )
+        self.assertEqual(result["query_source"], "host_fallback")
+        self.assertEqual(result["recommendation"]["action"], "relief_and_divert_210")
+
+    def test_diagnostician_reject_then_agree(self):
+        result, _model, trace_file = self._run(
+            "scn-false", model=DiagnosticianRejectThenAgreeFixture()
+        )
+        self.assertEqual(result["classification_source"], "agreed")
+        self.assertEqual(result["incident"]["incident_type"], "unconfirmed")
+        self.assertNotIn("divert", result["recommendation"]["text"].lower())
+        rows = [
+            json.loads(line)
+            for line in trace_file.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertTrue(
+            any(row.get("action") == "reject_classification" for row in rows)
+        )
+
+    def test_judge_disagreement_keeps_simulation_winner(self):
+        result, _model, _ = self._run("scn-block", model=JudgeWaitFixture())
+        self.assertFalse(result["judge_agreed"])
+        self.assertEqual(result["recommendation"]["action"], "relief_and_divert_210")
 
 
 if __name__ == "__main__":

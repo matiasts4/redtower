@@ -1,7 +1,7 @@
 # RED Control Tower result
 
 **Scenario:** scn-surge
-**Model:** nvidia/nemotron-3.5-super-vl-120b-a12b
+**Model:** fixture
 
 ## Diagnosis
 
@@ -14,6 +14,7 @@ Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a espe
 - **Action:** dispatch_relief
 - **Passenger-minutes (20 min):** 1170
 - **Reduction vs baseline:** 77%
+- **Explanation source:** reporter
 
 ## Alternatives
 

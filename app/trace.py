@@ -11,9 +11,11 @@ def _truncate(text: str, limit: int = 500) -> str:
 
 
 class Tracer:
-    def __init__(self, path: Path, echo: bool = False):
+    def __init__(self, path: Path, echo: bool = False, on_event=None):
         self.path = path
         self.echo = echo
+        self.on_event = on_event
+        self.last_timestamp = None
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def log(
@@ -28,9 +30,14 @@ class Tracer:
         model: str = "",
         retry_count: int = 0,
         status: str = "ok",
+        duration_ms: int | None = None,
     ) -> None:
+        now = datetime.now(timezone.utc)
+        if duration_ms is None and self.last_timestamp is not None:
+            duration_ms = int((now - self.last_timestamp).total_seconds() * 1000)
+        self.last_timestamp = now
         record = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": now.isoformat(),
             "agent_name": role,
             "role": role,
             "action": action or role,
@@ -41,9 +48,15 @@ class Tracer:
             "scenario_id": scenario_id,
             "retry_count": retry_count,
             "status": status,
+            "duration_ms": duration_ms if duration_ms is not None else 0,
         }
         line = json.dumps(record, ensure_ascii=False)
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(line + "\n")
         if self.echo:
-            print(line)
+            print(line, flush=True)
+        if self.on_event:
+            try:
+                self.on_event(record)
+            except Exception:
+                pass

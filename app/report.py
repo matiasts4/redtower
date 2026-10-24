@@ -19,6 +19,7 @@ def render_markdown(result: dict) -> str:
         f"- **Action:** {recommendation.get('action', '')}",
         f"- **Passenger-minutes (20 min):** {recommendation.get('passenger_minutes', '')}",
         f"- **Reduction vs baseline:** {recommendation.get('reduction_percent', 0)}%",
+        f"- **Explanation source:** {result.get('explanation_source', '')}",
         "",
         "## Alternatives",
         "",

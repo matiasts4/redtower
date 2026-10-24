@@ -4,13 +4,17 @@ from pathlib import Path
 from app.store import ROOT, bind_params, load_queries
 
 
+class ZetarisConnectionError(Exception):
+    pass
+
+
 class ZetarisSource:
     """Runs the same named SQL against the Zetaris REST API."""
 
     def __init__(self, root: Path | None = None):
         root = root or ROOT
         self.queries = load_queries(root / "sql" / "queries.sql")
-        self.base = os.environ.get("ZETARIS_API_URL", "http://localhost:8888").rstrip("/")
+        self.base = os.environ.get("ZETARIS_API_URL", "http://127.0.0.1:3000").rstrip("/")
         self.login_path = os.environ.get("ZETARIS_LOGIN_PATH", "/api/auth/login")
         self.sql_path = os.environ.get("ZETARIS_SQL_PATH", "/api/proxy/query/sql/start")
         self.user = os.environ.get("ZETARIS_USER", "")
@@ -27,17 +31,22 @@ class ZetarisSource:
         import requests
 
         self._login()
-        response = requests.post(
-            f"{self.base}{self.sql_path}",
-            headers={
-                "Authorization": f"Bearer {self.token}",
-                "X-Org-ID": str(self.org_id or ""),
-                "Content-Type": "application/json",
-            },
-            json={"select": self.sql(name, scenario_id), "pageLimit": 200},
-            timeout=60,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.post(
+                f"{self.base}{self.sql_path}",
+                headers={
+                    "Authorization": f"Bearer {self.token}",
+                    "X-Org-ID": str(self.org_id or ""),
+                    "Content-Type": "application/json",
+                },
+                json={"select": self.sql(name, scenario_id), "pageLimit": 200},
+                timeout=60,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as exc:
+            raise ZetarisConnectionError(
+                f"Zetaris query '{name}' failed at {self.base}{self.sql_path}: {exc}."
+            ) from exc
         return _rows(response.json())
 
     def _login(self) -> None:
@@ -49,12 +58,18 @@ class ZetarisSource:
             )
         import requests
 
-        response = requests.post(
-            f"{self.base}{self.login_path}",
-            json={"username": self.user, "password": self.password},
-            timeout=30,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.post(
+                f"{self.base}{self.login_path}",
+                json={"username": self.user, "password": self.password},
+                timeout=30,
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as exc:
+            raise ZetarisConnectionError(
+                f"Failed to connect to Zetaris at {self.base}{self.login_path}: {exc}. "
+                "Ensure Zetaris Docker containers are running or run with --sample."
+            ) from exc
         body = response.json()
         self.token = _find(body, ("idToken", "token", "accessToken", "access_token", "jwt"))
         self.org_id = _find(body, ("orgId", "org_id"))

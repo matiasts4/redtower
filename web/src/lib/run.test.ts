@@ -6,8 +6,9 @@ import { fileURLToPath } from "node:url";
 import { RUN_STEPS } from "./run.ts";
 import { SOURCES, rowsFor } from "./sources.ts";
 
-test("the replay names the host as the only decider and keeps the planner unused", () => {
-  assert.equal(RUN_STEPS.find((step) => step.id === "planner")?.decides, false);
+test("the planner selects queries and the simulation still owns the ranking", () => {
+  assert.equal(RUN_STEPS[0]?.id, "planner");
+  assert.equal(RUN_STEPS[0]?.action, "select_queries");
   assert.equal(RUN_STEPS.find((step) => step.id === "rank")?.decides, true);
   assert.equal(RUN_STEPS.filter((step) => step.decides).map((step) => step.id).join(","), "load,rank");
   assert.equal(RUN_STEPS.at(-1)?.id, "reporter");

@@ -13,16 +13,18 @@ No API key is required for that run. `model` in the JSON is `fixture`.
 
 ## Roles
 
-The host calculates the decision before the language-model roles speak. Those roles cannot change the class, the ranking, or `applied`.
+The planner proposes which named queries to load; the host accepts only catalog names that include the core sensor set. The diagnostician reads those rows (not a finished class) and proposes status and incident type; the host checks that proposal against deterministic sensor rules in `classify()`. The host then measures impact, simulates queues, and ranks actions by passenger-minutes. The scenario role may only name catalog actions; it does not change the ranking. The judge compares the four scores and may name a different winner; the simulation ranking stays authoritative. The reporter writes Spanish text that is stored when it cites a host evidence id and the passenger-minute figures from the simulation; otherwise the template sentence from `recommendation_text()` is stored.
 
 | Role | What it does |
 | --- | --- |
-| Host | Loads every named query, classifies the incident, measures impact, simulates queues, ranks actions, and stores the Spanish sentence. |
-| Planner | Asked which queries to run. The host still runs the full query list. |
-| Diagnostician | Names the incident from the host result. It cannot override the class. |
-| Scenario | May only propose actions from the host catalog. |
-| Judge | Compares host scores. It cannot change the ranking. |
-| Reporter | Explains the host sentence in Spanish and must cite an evidence id. A draft that cites none is asked once more. The stored sentence stays the host sentence. |
+| Host | Validates query lists, loads data, checks classification, measures impact, simulates queues, ranks actions, and validates the reporter draft. |
+| Planner | Selects named queries from the catalog for the scenario. |
+| Diagnostician | Proposes status and incident type from row summaries. |
+| Scenario | Proposes actions from the host catalog only. |
+| Judge | Names the lowest passenger-minutes action from host scores. |
+| Reporter | Explains the recommendation in Spanish with evidence and figures when accepted. |
+
+When the model does not agree with `classify()`, the stored class still comes from the sensor rules. Passenger-minutes still come from the queue simulation. `applied` stays false.
 
 Passenger report text is untrusted. It appears only under `Untrusted report data:` in user messages.
 
@@ -54,7 +56,7 @@ docker run --rm redtower python run.py --input input_examples/scn-false.json
 
 - SQL runs on the CSV files in `data/sample/` through `sql/queries.sql`.
 - The model is the local stand-in. Meterless and Zetaris are not called.
-- Classification, the queue simulation, the ranking, and the stored sentence still run. The output is not read from `output_examples/`.
+- Classification rules, the queue simulation, the ranking, and the locked diagnosis sentences still run. Output JSON is written fresh by `run.py` on each run without reading cached outputs.
 
 ```bash
 python run.py --input input_examples/scn-normal.json
@@ -70,7 +72,7 @@ Record approval without applying a change:
 python run.py --input input_examples/scn-block.json --approve
 ```
 
-`--approve` sets `authorization` to `recorded` and `operator_decision` to `approve`. `applied` stays false.
+`--approve` writes `output_examples/scn-block-approved.json` (and Markdown). It sets `authorization` to `recorded` and `operator_decision` to `approve`. `applied` stays false.
 
 `--fixture` forces the same local stand-in even if `SAMPLE_MODE=false`.
 
@@ -111,15 +113,17 @@ The 38% figure is `912 / 2400` from that simulation. It is not a stored label.
 
 Models:
 
-- Sample mode: no external model. The local stand-in is called, and the host keeps its own decision.
+- Sample mode: no external model. The local stand-in drives role prompts; the host keeps classification and ranking when proposals disagree.
 - Live mode: NVIDIA Nemotron through Meterless Nightshift. Super plans and reads the case, Ultra judges when configured, Nano writes the explanation when configured.
 
 Sponsor technology:
 
-- Zetaris runs the same named SQL as the sample database when `SAMPLE_MODE=false`. It does not supply a live transit feed.
-- Meterless is the model API for the five roles in live mode.
-- Cursor is the development environment. Composer assisted the scaffolding, the tests, and this README.
-- NVIDIA Nemotron is the model family Nightshift reports in live mode.
+- **Zetaris:** Data Fabric that federates and executes the 11 named SQL queries across the corridor tables in `REDTOWER` when `SAMPLE_MODE=false`.
+- **Meterless (Build Engine & Power Runtime):**
+  - *Build Engine (World Model & Markovian State Pattern):* The host maintains deterministic corridor state while specialist roles propose queries, classification, and wording within bounded checks.
+  - *Power Runtime (Nightshift):* OpenAI-compatible inference runtime for NVIDIA Nemotron models.
+- **Cursor:** The development environment. Composer and Grok assisted the scaffolding, the tests, and this README.
+- **NVIDIA Nemotron:** Model family powering live inference through Meterless Nightshift (Super 120B for planning/diagnosis, Ultra 550B for judging, Nano 30B for reporting).
 
 Development:
 
@@ -137,6 +141,8 @@ All corridor rows are synthetic and live in `data/sample/`. See `data/README.md`
 
 `output_examples/` and `logs/` are produced by `run.py`. Sample runs record `model` as `fixture`. Live runs record the Nemotron id returned by Nightshift. Logs name the role, the action, a short input, a short output, the model, and any reporter retry. They do not contain API keys.
 
+Result JSON includes `query_source`, `classification_source`, `explanation_source`, and `judge_agreed` to show how host checks and model proposals aligned.
+
 ## Third-party code and licences
 
 | Package | Licence |
@@ -147,14 +153,25 @@ All corridor rows are synthetic and live in `data/sample/`. See `data/README.md`
 
 No other repository is vendored in this project.
 
+## Web Control Room
+
+A Next.js app under `web/` reads the JSON files in `output_examples/` and can launch `python run.py`. It does not recompute a decision and it does not set `applied`. Sample mode needs no API keys. Live mode runs only when `python run.py --check` exits 0, which means Zetaris and Nightshift settings are present. See `web/README.md`.
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Open `http://localhost:3010/` for the landing page and `http://localhost:3010/system` for the operating view. Port 3000 stays with Zetaris. From `/system`, Sample runs `run.py --sample --stream` and writes `logs/web_<scenario>.json`. Live stays disabled until `run.py --check` exits 0.
+
 ## Limitations
 
 - One fictional corridor, four routes, five scenarios.
-- No map, no web control room, no demo video, and no slide deck in this repository.
-- No autonomous route change. Approval is a record.
+- No automatic route changes without operator confirmation. Operator approval is an auditable record (`applied` stays false).
 - Sample mode does not call Zetaris or Meterless.
 - Live Zetaris requires the `REDTOWER` tables to exist already.
-- The language-model roles do not choose the winner. The queue simulation does.
+- The queue simulation chooses the winning action; the judge may disagree without changing it.
 - Weather text and report wording do not change the class.
 
 ## Verification

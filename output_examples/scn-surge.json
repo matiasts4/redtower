@@ -1,6 +1,7 @@
 {
   "scenario_id": "scn-surge",
-  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "trace_file": "trace_20261023T154130328075Z.jsonl",
+  "model": "fixture",
   "incident": {
     "status": "real",
     "incident_type": "demand_surge",
@@ -14,6 +15,13 @@
       "501"
     ],
     "stop_count": 4,
+    "stops": [
+      "STOP_15",
+      "STOP_16",
+      "STOP_17",
+      "STOP_18"
+    ],
+    "slow_vehicle_ids": [],
     "passengers_20": 800,
     "waiting": 200,
     "arrival_per_min": 30,
@@ -25,13 +33,59 @@
       "action": "wait",
       "passenger_minutes": 5140,
       "cost": "low",
-      "risk": "high"
+      "risk": "high",
+      "queue_series": [
+        200,
+        206,
+        212,
+        218,
+        224,
+        230,
+        236,
+        242,
+        248,
+        254,
+        260,
+        266,
+        272,
+        278,
+        284,
+        290,
+        296,
+        302,
+        308,
+        314,
+        320
+      ]
     },
     {
       "action": "dispatch_relief",
       "passenger_minutes": 1170,
       "cost": "high",
-      "risk": "medium"
+      "risk": "medium",
+      "queue_series": [
+        200,
+        170,
+        140,
+        110,
+        80,
+        50,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30
+      ]
     }
   ],
   "recommendation": {
@@ -51,5 +105,9 @@
   "limitations": [
     "The system does not change routes.",
     "Recommendations require human approval before any operational change."
-  ]
+  ],
+  "query_source": "planner",
+  "classification_source": "agreed",
+  "explanation_source": "reporter",
+  "judge_agreed": true
 }

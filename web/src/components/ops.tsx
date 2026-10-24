@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import {
   Bus,
   Camera,
@@ -217,14 +219,18 @@ export function SignalLane({
   label,
   ids,
   empty,
+  details,
 }: {
   kind: keyof typeof signalIcon;
   label: string;
   ids: string[];
   empty: string;
+  details?: Record<string, string>;
 }) {
   const Icon = signalIcon[kind];
   const tone = ids.length === 0 ? undefined : signalTone[kind];
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   return (
     <div className="flex min-h-11 flex-wrap items-center gap-2 border-b border-rule px-3 py-2 last:border-b-0">
       <span className={`grid size-8 place-items-center rounded-full ${tone ? toneWell[tone] : "bg-field text-muted-foreground"}`}>
@@ -235,11 +241,30 @@ export function SignalLane({
       {ids.length === 0 ? (
         <span className="font-mono text-sm text-muted-foreground">{empty}</span>
       ) : (
-        ids.map((id) => (
-          <span key={id} className={`rounded-full px-2 py-1 font-mono text-xs ${toneWell[signalTone[kind]]}`}>
-            {id}
-          </span>
-        ))
+        ids.map((id) => {
+          const detail = details?.[id];
+          const isSelected = activeId === id;
+          return (
+            <div key={id} className="relative inline-flex items-center">
+              <button
+                type="button"
+                onClick={() => setActiveId(isSelected ? null : id)}
+                title={detail || id}
+                className={`cursor-pointer rounded-full px-2 py-1 font-mono text-xs transition-colors ${toneWell[signalTone[kind]]} ${
+                  isSelected ? "ring-2 ring-ink shadow-sm" : "hover:brightness-95"
+                }`}
+              >
+                {id}
+              </button>
+              {isSelected && detail && (
+                <div className="absolute top-full left-0 z-30 mt-1 min-w-[220px] max-w-xs rounded-lg border border-rule bg-card p-2.5 text-xs shadow-xl animate-in fade-in-50 zoom-in-95">
+                  <p className="font-mono font-bold text-[11px] text-muted-foreground">{id}</p>
+                  <p className="mt-1 text-ink leading-relaxed">{detail}</p>
+                </div>
+              )}
+            </div>
+          );
+        })
       )}
     </div>
   );

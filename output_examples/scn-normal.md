@@ -1,7 +1,7 @@
 # RED Control Tower result
 
 **Scenario:** scn-normal
-**Model:** nvidia/nemotron-3-ultra-550b-a55b
+**Model:** fixture
 
 ## Diagnosis
 
@@ -14,6 +14,7 @@ La operación del corredor está dentro de lo esperado. No recomiendo modificar 
 - **Action:** hold
 - **Passenger-minutes (20 min):** 0
 - **Reduction vs baseline:** 0%
+- **Explanation source:** reporter
 
 ## Alternatives
 

@@ -52,6 +52,8 @@ class SwitchTests(unittest.TestCase):
         for text in model.systems:
             self.assertNotIn("Untrusted report data:", text)
 
+        self.assertEqual(model.reporter_calls, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
