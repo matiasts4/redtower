@@ -9,6 +9,9 @@ export type StepView = {
   decides: boolean;
   summary: string;
   lines: string[];
+  model?: string;
+  isReal?: boolean;
+  durationMs?: number;
 };
 
 export function runViews(scenario: ScenarioFile, counts: Record<string, number>): StepView[] {
@@ -19,6 +22,8 @@ export function runViews(scenario: ScenarioFile, counts: Record<string, number>)
     decides: step.decides,
     summary: summaryFor(scenario, step.id),
     lines: linesFor(scenario, counts, step.id),
+    model: step.decides ? "host" : scenario.model,
+    isReal: false,
   }));
 }
 

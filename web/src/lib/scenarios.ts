@@ -17,6 +17,7 @@ export type ScenarioFile = {
   file_id: ScenarioId;
   scenario_id: string;
   model: string;
+  trace_file?: string;
   incident: {
     status: "real" | "insufficient" | "clear";
     incident_type: string;
@@ -26,6 +27,8 @@ export type ScenarioFile = {
   impact: {
     routes: string[];
     stop_count: number;
+    stops?: string[];
+    slow_vehicle_ids?: string[];
     passengers_20: number;
     waiting: number;
     arrival_per_min: number;
@@ -37,6 +40,7 @@ export type ScenarioFile = {
     passenger_minutes: number;
     cost: string;
     risk: string;
+    queue_series?: number[];
   }>;
   recommendation: {
     recommended_action: string;
@@ -53,6 +57,10 @@ export type ScenarioFile = {
   operator_decision: string | null;
   applied: false;
   limitations: string[];
+  query_source?: string;
+  classification_source?: string;
+  explanation_source?: string;
+  judge_agreed?: boolean;
 };
 
 function outputDir(): string {

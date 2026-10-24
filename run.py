@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,11 +29,24 @@ def main() -> int:
         help="Use FixtureModel instead of Meterless",
     )
     parser.add_argument(
+        "--sample",
+        action="store_true",
+        help="Use SampleSource (local CSV) instead of Zetaris",
+    )
+    parser.add_argument(
         "--approve",
         action="store_true",
         help="Record operator approval without applying route changes",
     )
+    parser.add_argument(
+        "--stream",
+        action="store_true",
+        help="Stream trace events as JSON lines to stdout as they occur",
+    )
     args = parser.parse_args()
+
+    if args.sample or args.fixture:
+        os.environ["SAMPLE_MODE"] = "true"
 
     if args.check:
         from app.ready import readiness_lines
@@ -91,7 +105,7 @@ def main() -> int:
             return 2
 
     source = build_source(ROOT)
-    tracer = Tracer(trace_path, echo=False)
+    tracer = Tracer(trace_path, echo=args.stream)
     try:
         result = run_scenario(
             scenario_id, source, model, tracer, approved=args.approve
@@ -101,9 +115,21 @@ def main() -> int:
         return 1
     except Exception as exc:
         from app.adapters.meterless import UnexpectedModel
+        from app.adapters.zetaris import ZetarisConnectionError
+        from openai import APIConnectionError, APITimeoutError
 
         if isinstance(exc, UnexpectedModel):
             print(str(exc), file=sys.stderr)
+            return 2
+        if isinstance(exc, ZetarisConnectionError):
+            print(f"Zetaris error: {exc}", file=sys.stderr)
+            return 2
+        if isinstance(exc, (APIConnectionError, APITimeoutError)):
+            print(
+                f"Meterless connection failed: {exc}. "
+                "Ensure Nightshift is running or pass --sample / --fixture.",
+                file=sys.stderr,
+            )
             return 2
         raise
 
@@ -117,7 +143,10 @@ def main() -> int:
     md_path = output_path.with_suffix(".md")
     md_path.write_text(render_markdown(result), encoding="utf-8")
 
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    if args.stream:
+        print(json.dumps({"event": "final_result", "data": result}, ensure_ascii=False), flush=True)
+    else:
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
 
 

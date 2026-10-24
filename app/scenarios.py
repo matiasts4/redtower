@@ -33,6 +33,19 @@ def queue_passenger_minutes(
     return total
 
 
+def queue_timeline(
+    waiting: int, arrival_per_min: int, board_per_min: int, horizon: int
+) -> list[int]:
+    timeline = []
+    queue = waiting
+    for _ in range(horizon):
+        timeline.append(queue)
+        boarded = min(queue, board_per_min)
+        queue = max(0, queue - boarded + arrival_per_min)
+    timeline.append(queue)
+    return timeline
+
+
 def catalog_for(incident_type: str) -> list[str]:
     return list(CATALOG[incident_type])
 
@@ -74,6 +87,12 @@ def build_alternatives(impact: dict, incident_type: str) -> list[dict]:
             rates["board_per_min"],
             RANK_HORIZON,
         )
+        timeline = queue_timeline(
+            waiting,
+            rates["arrival_per_min"],
+            rates["board_per_min"],
+            RANK_HORIZON,
+        )
         meta = ACTION_META[action]
         alternatives.append(
             {
@@ -81,6 +100,7 @@ def build_alternatives(impact: dict, incident_type: str) -> list[dict]:
                 "passenger_minutes": passenger_minutes,
                 "cost": meta["cost"],
                 "risk": meta["risk"],
+                "queue_series": timeline,
             }
         )
     return alternatives

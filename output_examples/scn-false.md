@@ -1,7 +1,7 @@
 # RED Control Tower result
 
 **Scenario:** scn-false
-**Model:** nvidia/nemotron-3-ultra-550b-a55b
+**Model:** fixture
 
 ## Diagnosis
 
@@ -9,11 +9,12 @@ Evidencia insuficiente. No recomiendo modificar la operación.
 
 ## Recommendation
 
-Evidencia insuficiente. No recomiendo modificar la operación.
+Evidencia insuficiente. No recomiendo modificar la operación. Reporte REP_FALSE_1; 0 minutos-pasajero; 0%.
 
 - **Action:** hold
 - **Passenger-minutes (20 min):** 0
 - **Reduction vs baseline:** 0%
+- **Explanation source:** reporter
 
 ## Alternatives
 

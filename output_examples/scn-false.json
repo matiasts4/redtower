@@ -1,6 +1,7 @@
 {
   "scenario_id": "scn-false",
-  "model": "nvidia/nemotron-3-ultra-550b-a55b",
+  "trace_file": "trace_20261023T154116502872Z.jsonl",
+  "model": "fixture",
   "incident": {
     "status": "insufficient",
     "incident_type": "unconfirmed",
@@ -12,6 +13,8 @@
   "impact": {
     "routes": [],
     "stop_count": 0,
+    "stops": [],
+    "slow_vehicle_ids": [],
     "passengers_20": 0,
     "waiting": 0,
     "arrival_per_min": 0,
@@ -23,7 +26,30 @@
       "action": "hold",
       "passenger_minutes": 0,
       "cost": "low",
-      "risk": "low"
+      "risk": "low",
+      "queue_series": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
     }
   ],
   "recommendation": {
@@ -32,7 +58,7 @@
     "baseline_passenger_minutes": 0,
     "saved": 0,
     "reduction_percent": 0,
-    "text": "Evidencia insuficiente. No recomiendo modificar la operación.",
+    "text": "Evidencia insuficiente. No recomiendo modificar la operación. Reporte REP_FALSE_1; 0 minutos-pasajero; 0%.",
     "action": "hold"
   },
   "diagnosis": "Evidencia insuficiente. No recomiendo modificar la operación.",
@@ -45,5 +71,9 @@
   "limitations": [
     "The system does not change routes.",
     "Recommendations require human approval before any operational change."
-  ]
+  ],
+  "query_source": "planner",
+  "classification_source": "agreed",
+  "explanation_source": "reporter",
+  "judge_agreed": true
 }

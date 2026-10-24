@@ -13,12 +13,24 @@ import {
   Scale,
   Stamp,
   Stethoscope,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { chromeCopy, type ChromeLang } from "@/lib/copy";
-import type { StepView } from "@/lib/replay";
+import type { RealTraceStep } from "@/lib/load-trace";
 
 export type TraceState = "idle" | "working" | "done";
+
+function shortModel(model?: string): string {
+  if (!model) return "";
+  if (model === "host") return "Host";
+  if (model === "fixture") return "Fixture";
+  if (model.includes("super")) return "Nemotron 120B";
+  if (model.includes("ultra")) return "Nemotron 550B";
+  if (model.includes("lightning")) return "Nemotron 30B";
+  return model.split("/").pop() || model;
+}
 
 export function TraceRow({
   index,
@@ -30,6 +42,8 @@ export function TraceRow({
   state,
   stateLabel,
   selected,
+  model,
+  durationMs,
   onSelect,
 }: {
   index: number;
@@ -41,6 +55,8 @@ export function TraceRow({
   state: TraceState;
   stateLabel: string;
   selected: boolean;
+  model?: string;
+  durationMs?: number;
   onSelect: () => void;
 }) {
   const Actor = actorIcon[actor] ?? Cpu;
@@ -51,31 +67,48 @@ export function TraceRow({
       : state === "done"
         ? "bg-clear/15 text-clear"
         : "bg-field text-muted-foreground";
+
+  const modelLabel = shortModel(model);
+
   return (
     <li>
       <button
         type="button"
         onClick={onSelect}
         aria-pressed={selected}
-        className={`grid min-h-11 w-full cursor-pointer grid-cols-[2.25rem_1fr_auto] items-center gap-3 border-b border-rule px-3 py-2 text-left transition-colors duration-200 last:border-b-0 ${
+        className={`grid min-h-12 w-full cursor-pointer grid-cols-[2.25rem_1fr_auto] items-center gap-3 border-b border-rule px-3 py-2 text-left transition-colors duration-200 last:border-b-0 ${
           selected ? "bg-field" : "bg-card hover:bg-paper"
         } ${state === "working" ? "shadow-[inset_3px_0_0_0_#8A5A12]" : state === "done" ? "shadow-[inset_3px_0_0_0_#2F5D45]" : ""}`}
       >
         <span className="font-mono text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
         <span className="min-w-0">
-          <span className="flex items-center gap-2 text-sm">
+          <span className="flex flex-wrap items-center gap-2 text-sm">
             <Actor className={`size-4 shrink-0 ${decides ? "text-signal" : "text-hold"}`} aria-hidden />
-            <span className="truncate">{actor}</span>
-            <span className="truncate font-mono text-xs text-muted-foreground">{action}</span>
+            <span className="font-medium truncate">{actor}</span>
+            <span className="truncate font-mono text-xs text-muted-foreground">({action})</span>
+            {modelLabel ? (
+              <span className={`rounded-full px-2 py-0.2 font-mono text-[10px] ${
+                decides ? "bg-signal/15 text-signal" : "bg-bone/80 text-ink border border-rule"
+              }`}>
+                {modelLabel}
+              </span>
+            ) : null}
           </span>
           <span className="mt-0.5 block truncate pl-6 font-mono text-[11px] text-muted-foreground">{summary}</span>
         </span>
         <span className="flex flex-col items-end gap-1">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${stateTone}`}>
-            <StateIcon className={`size-3.5 ${state === "working" ? "motion-safe:animate-spin" : ""}`} aria-hidden />
-            {stateLabel}
+          <span className="flex items-center gap-1.5">
+            {durationMs && durationMs > 0 ? (
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {(durationMs / 1000).toFixed(1)}s
+              </span>
+            ) : null}
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${stateTone}`}>
+              <StateIcon className={`size-3.5 ${state === "working" ? "motion-safe:animate-spin" : ""}`} aria-hidden />
+              {stateLabel}
+            </span>
           </span>
-          <span className={`inline-flex items-center gap-1 font-mono text-[11px] tracking-wide uppercase ${decides ? "text-signal" : "text-muted-foreground"}`}>
+          <span className={`inline-flex items-center gap-1 font-mono text-[11px] tracking-wide uppercase ${decides ? "text-signal font-semibold" : "text-muted-foreground"}`}>
             {decides ? <Stamp className="size-3" aria-hidden /> : <MessageSquare className="size-3" aria-hidden />}
             {authority}
           </span>
@@ -94,13 +127,24 @@ const actorIcon: Record<string, typeof Cpu> = {
   reporter: PenLine,
 };
 
-export function TraceLog({ lang, views, fileId }: { lang: ChromeLang; views: StepView[]; fileId: string }) {
+export function TraceLog({
+  lang,
+  views,
+  fileId,
+}: {
+  lang: ChromeLang;
+  views: RealTraceStep[];
+  fileId: string;
+}) {
   const copy = chromeCopy[lang].platform;
   const [cursor, setCursor] = useState(views.length);
   const [selected, setSelected] = useState(2);
   const [playing, setPlaying] = useState(false);
   const filePane = useRef<HTMLDivElement>(null);
   const active = views[selected] ?? views[0];
+
+  const isReal = views.some((v) => v.isReal);
+  const totalDurationMs = views.reduce((acc, v) => acc + (v.durationMs || 0), 0);
 
   useEffect(() => {
     setPlaying(false);
@@ -150,19 +194,35 @@ export function TraceLog({ lang, views, fileId }: { lang: ChromeLang; views: Ste
   return (
     <section className="overflow-hidden rounded-xl border border-rule bg-card">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-4 py-3">
-        <div>
-          <h2 className="text-sm font-medium">{copy.recordedRun}</h2>
-          <p className="text-sm text-muted-foreground">{copy.recordedRunNote}</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <div>
+            <h2 className="text-sm font-medium flex items-center gap-2">
+              {copy.recordedRun}
+              {isReal ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-signal/15 px-2.5 py-0.5 font-mono text-[10px] text-signal font-semibold">
+                  <Sparkles className="size-3" /> Traza Real (Auditable)
+                </span>
+              ) : null}
+            </h2>
+            <p className="text-xs text-muted-foreground">{copy.recordedRunNote}</p>
+          </div>
+          {totalDurationMs > 0 ? (
+            <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground border-l border-rule pl-3">
+              <Clock className="size-3.5" />
+              Tiempo total: {(totalDurationMs / 1000).toFixed(1)}s
+            </span>
+          ) : null}
         </div>
         <Button onClick={replay}>{copy.replay}</Button>
       </header>
-      <div className="grid h-[32rem] grid-rows-[14rem_minmax(0,1fr)] lg:h-[30rem] lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:grid-rows-1">
+
+      <div className="grid h-[34rem] grid-rows-[14rem_minmax(0,1fr)] lg:h-[32rem] lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:grid-rows-1">
         <ol className="min-h-0 overflow-y-auto border-b border-rule lg:border-r lg:border-b-0">
           {views.map((view, index) => {
             const state = rowState(index);
             return (
               <TraceRow
-                key={view.id}
+                key={`${view.id}-${index}`}
                 index={index}
                 actor={view.actor}
                 action={view.action}
@@ -172,6 +232,8 @@ export function TraceLog({ lang, views, fileId }: { lang: ChromeLang; views: Ste
                 state={state}
                 stateLabel={state === "working" ? copy.working : state === "done" ? copy.done : copy.idle}
                 selected={index === selected}
+                model={view.model}
+                durationMs={view.durationMs}
                 onSelect={() => {
                   setPlaying(false);
                   setSelected(index);
@@ -180,19 +242,41 @@ export function TraceLog({ lang, views, fileId }: { lang: ChromeLang; views: Ste
             );
           })}
         </ol>
+
         {active ? (
           <div className="flex min-h-0 flex-col bg-field/70">
             <div className="shrink-0 border-b border-rule px-4 py-3">
-              <p className="font-mono text-xs tracking-[0.14em] uppercase text-muted-foreground">
-                {active.actor} · {active.action} · {active.decides ? copy.decides : copy.explains}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-mono text-xs tracking-[0.14em] uppercase text-muted-foreground">
+                  {active.actor} · {active.action} · {active.decides ? copy.decides : copy.explains}
+                </p>
+                {active.model ? (
+                  <span className="font-mono text-[11px] bg-card px-2 py-0.5 rounded border border-rule">
+                    {active.model}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 text-sm leading-6">
+                {copy.steps[active.id as keyof typeof copy.steps] || active.action}
               </p>
-              <p className="mt-2 text-sm leading-6">{copy.steps[active.id]}</p>
             </div>
+
             <div ref={filePane} className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-              <p className="text-xs tracking-[0.14em] uppercase text-muted-foreground">{copy.inspect}</p>
-              <ul className="mt-2 overflow-hidden rounded-md border border-rule bg-card">
+              <p className="text-xs tracking-[0.14em] uppercase text-muted-foreground mb-2">
+                {isReal ? "Registro de Ejecución e Inspección de Señales" : copy.inspect}
+              </p>
+              <ul className="overflow-hidden rounded-md border border-rule bg-card">
                 {active.lines.map((line, index) => (
-                  <li key={`${active.id}-${index}`} className="border-b border-rule px-3 py-2 font-mono text-sm leading-6 break-words last:border-b-0">
+                  <li
+                    key={`${active.id}-${index}`}
+                    className={`border-b border-rule px-3 py-1.5 font-mono text-xs leading-5 break-words last:border-b-0 ${
+                      line.startsWith("---")
+                        ? "bg-field font-bold text-ink"
+                        : line.startsWith("model:")
+                          ? "bg-signal/5 text-signal font-semibold"
+                          : ""
+                    }`}
+                  >
                     {line}
                   </li>
                 ))}

@@ -1,6 +1,7 @@
 {
   "scenario_id": "scn-stopped",
-  "model": "nvidia/nemotron-3.5-super-vl-120b-a12b",
+  "trace_file": "trace_20261023T154116890986Z.jsonl",
+  "model": "fixture",
   "incident": {
     "status": "real",
     "incident_type": "stopped_bus",
@@ -14,6 +15,15 @@
       "210"
     ],
     "stop_count": 4,
+    "stops": [
+      "STOP_10",
+      "STOP_11",
+      "STOP_12",
+      "STOP_13"
+    ],
+    "slow_vehicle_ids": [
+      "BUS_210_04"
+    ],
     "passengers_20": 240,
     "waiting": 40,
     "arrival_per_min": 10,
@@ -25,13 +35,59 @@
       "action": "wait",
       "passenger_minutes": 2700,
       "cost": "low",
-      "risk": "high"
+      "risk": "high",
+      "queue_series": [
+        40,
+        50,
+        60,
+        70,
+        80,
+        90,
+        100,
+        110,
+        120,
+        130,
+        140,
+        150,
+        160,
+        170,
+        180,
+        190,
+        200,
+        210,
+        220,
+        230,
+        240
+      ]
     },
     {
       "action": "dispatch_relief",
       "passenger_minutes": 234,
       "cost": "high",
-      "risk": "medium"
+      "risk": "medium",
+      "queue_series": [
+        40,
+        14,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
     }
   ],
   "recommendation": {
@@ -40,7 +96,7 @@
     "baseline_passenger_minutes": 2700,
     "saved": 2466,
     "reduction_percent": 91,
-    "text": "Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.",
+    "text": "Con la evidencia BUS_210_04, la opción recomendada reduce 234 minutos-pasajero en 20 minutos (91% vs esperar).",
     "action": "dispatch_relief"
   },
   "diagnosis": "El incidente probablemente es real. Afecta a un recorridos, cuatro paraderos y aproximadamente 240 pasajeros durante los próximos 20 minutos.",
@@ -53,5 +109,9 @@
   "limitations": [
     "The system does not change routes.",
     "Recommendations require human approval before any operational change."
-  ]
+  ],
+  "query_source": "planner",
+  "classification_source": "agreed",
+  "explanation_source": "reporter",
+  "judge_agreed": true
 }

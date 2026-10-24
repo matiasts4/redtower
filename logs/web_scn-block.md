@@ -1,0 +1,35 @@
+# RED Control Tower result
+
+**Scenario:** scn-block
+**Model:** nvidia/nemotron-3.5-lightning-30b-a3b
+
+## Diagnosis
+
+El incidente probablemente es real. Afecta a cuatro recorridos, nueve paraderos y aproximadamente 1.800 pasajeros durante los próximos 20 minutos.
+
+## Recommendation
+
+Frente al bloqueo en AV023 evidenciado por REP_BLK_1, se despliega un bus de refuerzo y se desvia el recorrido 210, afectando 1488 minutos-pasajero en 20 minutos pero reduciendo el impacto en un 38% frente a la opción de esperar.
+
+- **Action:** relief_and_divert_210
+- **Passenger-minutes (20 min):** 1488
+- **Reduction vs baseline:** 38%
+- **Explanation source:** reporter
+
+## Alternatives
+
+- `wait`: 2400 passenger-minutes; cost low; risk high
+- `divert_210`: 1560 passenger-minutes; cost medium; risk medium
+- `dispatch_relief`: 1716 passenger-minutes; cost high; risk medium
+- `relief_and_divert_210`: 1488 passenger-minutes; cost high; risk medium
+
+## Authorization
+
+- **Status:** pending_human
+- **Operator decision:** None
+- **Applied:** False
+
+## Limitations
+
+- The system does not change routes.
+- Recommendations require human approval before any operational change.

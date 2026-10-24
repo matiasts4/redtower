@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3010",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3010",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test src/lib/scenarios.test.ts src/lib/signals.test.ts src/lib/run.test.ts src/lib/replay.test.ts"
+    "test": "node --experimental-strip-types --test src/lib/scenarios.test.ts src/lib/signals.test.ts src/lib/run.test.ts src/lib/replay.test.ts src/lib/load-trace.test.ts src/lib/agent-launch.test.ts src/lib/live-feed.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

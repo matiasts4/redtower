@@ -1,0 +1,199 @@
+{
+  "scenario_id": "scn-block",
+  "trace_file": "trace_20261023T163248185879Z.jsonl",
+  "model": "fixture",
+  "incident": {
+    "status": "real",
+    "incident_type": "road_block",
+    "confidence": 0.86,
+    "evidence_ids": [
+      "REP_BLK_1",
+      "REP_BLK_2",
+      "REP_BLK_3",
+      "BUS_210_02",
+      "BUS_307_01",
+      "BUS_406_01",
+      "CAM_AV023",
+      "RD_AV023"
+    ]
+  },
+  "impact": {
+    "routes": [
+      "210",
+      "307",
+      "406",
+      "501"
+    ],
+    "stop_count": 9,
+    "stops": [
+      "STOP_06",
+      "STOP_07",
+      "STOP_08",
+      "STOP_09",
+      "STOP_10",
+      "STOP_11",
+      "STOP_12",
+      "STOP_13",
+      "STOP_14"
+    ],
+    "slow_vehicle_ids": [
+      "BUS_210_02",
+      "BUS_307_01",
+      "BUS_406_01"
+    ],
+    "passengers_20": 1800,
+    "waiting": 120,
+    "arrival_per_min": 84,
+    "board_per_min": 84,
+    "moving_buses": 7
+  },
+  "alternatives": [
+    {
+      "action": "wait",
+      "passenger_minutes": 2400,
+      "cost": "low",
+      "risk": "high",
+      "queue_series": [
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "action": "divert_210",
+      "passenger_minutes": 1560,
+      "cost": "medium",
+      "risk": "medium",
+      "queue_series": [
+        120,
+        108,
+        96,
+        84,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72
+      ]
+    },
+    {
+      "action": "dispatch_relief",
+      "passenger_minutes": 1716,
+      "cost": "high",
+      "risk": "medium",
+      "queue_series": [
+        120,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84,
+        84
+      ]
+    },
+    {
+      "action": "relief_and_divert_210",
+      "passenger_minutes": 1488,
+      "cost": "high",
+      "risk": "medium",
+      "queue_series": [
+        120,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72,
+        72
+      ]
+    }
+  ],
+  "recommendation": {
+    "recommended_action": "relief_and_divert_210",
+    "passenger_minutes": 1488,
+    "baseline_passenger_minutes": 2400,
+    "saved": 912,
+    "reduction_percent": 38,
+    "text": "Con la evidencia REP_BLK_1, la opción recomendada reduce 1488 minutos-pasajero en 20 minutos (38% vs esperar).",
+    "action": "relief_and_divert_210"
+  },
+  "diagnosis": "El incidente probablemente es real. Afecta a cuatro recorridos, nueve paraderos y aproximadamente 1.800 pasajeros durante los próximos 20 minutos.",
+  "evidence_ids": [
+    "REP_BLK_1",
+    "REP_BLK_2",
+    "REP_BLK_3",
+    "BUS_210_02",
+    "BUS_307_01",
+    "BUS_406_01",
+    "CAM_AV023",
+    "RD_AV023"
+  ],
+  "authorization": "pending_human",
+  "operator_decision": null,
+  "applied": false,
+  "limitations": [
+    "The system does not change routes.",
+    "Recommendations require human approval before any operational change."
+  ],
+  "query_source": "planner",
+  "classification_source": "agreed",
+  "explanation_source": "reporter",
+  "judge_agreed": true
+}
