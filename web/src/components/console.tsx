@@ -17,8 +17,7 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { TraceLog } from "@/components/trace-log";
-import { LiveRun } from "@/components/live-run";
+import { ExecutionFlow } from "@/components/execution-flow";
 import { SourceRack } from "@/components/source-rack";
 import { CorridorMap } from "@/components/corridor-map";
 import { QueueChart } from "@/components/queue-chart";
@@ -151,13 +150,24 @@ export function Console({
   }, [isRunning]);
 
   const fallbackViews = useMemo(() => runViews(baseScenario, counts), [baseScenario, counts]);
-  const views =
-    runMode === "live"
-      ? liveStreamTrace[baseScenario.file_id] || []
+  const effectiveSteps = useMemo(() => {
+    if (isRunning && liveStreamTrace[scenario.file_id]?.length) {
+      return liveStreamTrace[scenario.file_id];
+    }
+    if (runMode === "live") {
+      return liveStreamTrace[baseScenario.file_id]?.length
+        ? liveStreamTrace[baseScenario.file_id]
+        : traces?.[baseScenario.file_id] || fallbackViews;
+    }
+    return liveStreamTrace[baseScenario.file_id]?.length
+      ? liveStreamTrace[baseScenario.file_id]
       : traces?.[baseScenario.file_id] || traces?.[baseScenario.scenario_id] || fallbackViews;
+  }, [isRunning, liveStreamTrace, scenario.file_id, runMode, baseScenario.file_id, baseScenario.scenario_id, traces, fallbackViews]);
 
   // Operator approval modal state
-  const [operatorName, setOperatorName] = useState("Operador Control Tower");
+  const [operatorName, setOperatorName] = useState(
+    lang === "es" ? "Operador Turno Poniente" : "Control Tower Operator",
+  );
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [approvalFeedback, setApprovalFeedback] = useState<string | null>(null);
 
@@ -187,18 +197,17 @@ export function Console({
             applied: false,
           },
         }));
-        setApprovalFeedback(
-          decision === "approve"
-            ? `Decisión 'approve' registrada para ${operatorName}. applied permanece en false.`
-            : `Decisión 'reject' registrada para ${operatorName}. applied permanece en false.`,
-        );
+        const msg = decision === "approve"
+          ? copy.platform.feedbackApprove.replace("{name}", operatorName)
+          : copy.platform.feedbackReject.replace("{name}", operatorName);
+        setApprovalFeedback(msg);
         setTimeout(() => {
           setApprovalOpen(false);
           setApprovalFeedback(null);
         }, 1500);
       }
     } catch (err: any) {
-      setApprovalFeedback(`Error registrando aprobación: ${err.message}`);
+      setApprovalFeedback(`Error: ${err.message}`);
     }
   }
 
@@ -307,22 +316,22 @@ export function Console({
     const details: Record<string, string> = {};
     for (const r of tables["user_reports.csv"] || []) {
       if (r.scenario_id === scenario.scenario_id && r.report_id) {
-        details[r.report_id] = `Reporte: "${r.description}" (Recibido: ${r.reported_at})`;
+        details[r.report_id] = `Report: "${r.description}" (${r.reported_at})`;
       }
     }
     for (const p of tables["vehicle_positions.csv"] || []) {
       if (p.scenario_id === scenario.scenario_id && p.vehicle_id) {
-        details[p.vehicle_id] = `Bus ${p.vehicle_id} · Recorrido ${p.route_id} · Vel: ${p.speed_kmh} km/h · Paradero: ${p.nearest_stop}`;
+        details[p.vehicle_id] = `Bus ${p.vehicle_id} · Route ${p.route_id} · Speed: ${p.speed_kmh} km/h · Stop: ${p.nearest_stop}`;
       }
     }
     for (const c of tables["cameras.csv"] || []) {
       if (c.scenario_id === scenario.scenario_id && c.camera_id) {
-        details[c.camera_id] = `Cámara ${c.camera_id} · Estado: '${c.state}' en ${c.intersection}`;
+        details[c.camera_id] = `Camera ${c.camera_id} · State: '${c.state}' @ ${c.intersection}`;
       }
     }
     for (const re of tables["road_events.csv"] || []) {
       if (re.scenario_id === scenario.scenario_id && re.event_id) {
-        details[re.event_id] = `Evento vial ${re.event_id}: ${re.type} · Severidad: ${re.severity} en ${re.intersection}`;
+        details[re.event_id] = `Road event ${re.event_id}: ${re.type} · Severity: ${re.severity} @ ${re.intersection}`;
       }
     }
     return details;
@@ -332,6 +341,8 @@ export function Console({
     setFileId(next);
     router.replace(`/system?file=${next}`, { scroll: false });
   }
+
+  const isRealTrace = effectiveSteps.some((s) => s.isReal);
 
   return (
     <div className="min-h-full bg-paper">
@@ -381,7 +392,7 @@ export function Console({
         <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rule bg-card px-4 py-3 shadow-xs">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground font-mono">MODO:</span>
+              <span className="text-xs text-muted-foreground font-mono">{copy.platform.mode}</span>
               <button
                 type="button"
                 onClick={() => setRunMode("sample")}
@@ -391,7 +402,7 @@ export function Console({
                     : "bg-field text-ink hover:bg-field/80 border border-rule"
                 }`}
               >
-                Sample (SQLite + CSV)
+                {copy.platform.sampleMode}
               </button>
               <button
                 type="button"
@@ -436,6 +447,7 @@ export function Console({
           {runError ? <p className="w-full text-sm text-signal">{runError}</p> : null}
         </section>
 
+        {/* Scenario Switcher */}
         <div className="grid gap-3">
           <div className="relative max-w-xs">
             <Search className="pointer-events-none absolute top-3.5 left-4 size-4 text-muted-foreground" />
@@ -474,52 +486,20 @@ export function Console({
           ) : null}
         </div>
 
-        {runMode === "live" ? (
-          <div className="grid gap-4">
-            <LiveRun
-              lang={lang}
-              steps={liveStreamTrace[baseScenario.file_id] || []}
-              running={isRunning}
-              elapsed={runElapsed}
-            />
-            {liveScenarioOverride[baseScenario.file_id] && !isRunning ? (
-              <section className="grid gap-4 rounded-xl border border-rule bg-card p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-sm font-medium">{copy.platform.liveResult}</h2>
-                  <StatusMark status={scenario.incident.status} />
-                  <span className="rounded-full border border-rule px-3 py-1 font-mono text-sm">
-                    {scenario.incident.incident_type}
-                  </span>
-                </div>
-                <SentenceBlock
-                  label={copy.sentence.label}
-                  note={copy.sentence.note}
-                  text={scenario.diagnosis}
-                  tone="signal"
-                />
-                <SentenceBlock label={copy.recommendation.label} text={scenario.recommendation.text} tone="clear" />
-                <DamageComparison
-                  unit={copy.metric.minutes}
-                  versus={copy.recommendation.versus}
-                  waitLabel={copy.platform.waitDamage}
-                  choiceLabel={copy.recommendation.label}
-                  savedLabel={copy.platform.saved}
-                  reductionLabel={copy.platform.reduction}
-                  wait={scenario.recommendation.baseline_passenger_minutes}
-                  choice={scenario.recommendation.passenger_minutes}
-                  saved={scenario.recommendation.saved}
-                  reduction={scenario.recommendation.reduction_percent}
-                  format={(value) => count(value, lang)}
-                />
-                <p className="font-mono text-xs text-muted-foreground">{copy.platform.liveApplied}</p>
-              </section>
-            ) : null}
-          </div>
-        ) : (
-        <>
         {/* Spatial corridor map */}
         <CorridorMap scenario={scenario} tables={tables} />
 
+        {/* Centerpiece: Interactive Multi-Agent Execution Flow (Graph DAG & Hierarchical Tree) */}
+        <ExecutionFlow
+          lang={lang}
+          steps={effectiveSteps}
+          running={isRunning}
+          elapsed={runElapsed}
+          scenario={scenario}
+          isReal={isRealTrace}
+        />
+
+        {/* Decision & Response Grid */}
         <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="grid gap-4">
             <section className="grid gap-4 rounded-xl border border-rule bg-card p-4">
@@ -539,6 +519,7 @@ export function Console({
                   {scenario.incident.confidence}
                 </span>
               </div>
+
               {scenario.scenario_id === "scn-false" || scenario.evidence_ids.includes("REP_FALSE_1") ? (
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-sm">
                   <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold mb-1">
@@ -556,13 +537,32 @@ export function Console({
                   </p>
                 </div>
               ) : null}
+
+              {/* Canonical Host Operator Sentence */}
               <SentenceBlock
                 label={copy.sentence.label}
                 note={copy.sentence.note}
                 text={scenario.diagnosis}
                 tone="signal"
               />
-              <SentenceBlock label={copy.recommendation.label} text={scenario.recommendation.text} tone="clear" />
+
+              {/* Host Canonical Recommendation */}
+              <SentenceBlock
+                label={copy.recommendation.canonical}
+                text={scenario.recommendation.host_text || scenario.recommendation.text}
+                tone="clear"
+              />
+
+              {/* Reporter Grounded Citation (if distinct) */}
+              {scenario.recommendation.host_text &&
+              scenario.recommendation.text &&
+              scenario.recommendation.text !== scenario.recommendation.host_text ? (
+                <div className="rounded-lg border border-rule bg-field/60 p-3 text-xs">
+                  <p className="font-mono text-[10px] uppercase text-muted-foreground mb-1">{copy.recommendation.cited}</p>
+                  <p className="text-ink font-mono text-[11px] leading-relaxed">{scenario.recommendation.text}</p>
+                </div>
+              ) : null}
+
               <DamageComparison
                 unit={copy.metric.minutes}
                 versus={copy.recommendation.versus}
@@ -631,32 +631,32 @@ export function Console({
                     >
                       <UserCheck className="size-4" />
                       {scenario.authorization === "recorded"
-                        ? "Modificar Decisión de Operador"
-                        : "Registrar Aprobación de Operador"}
+                        ? copy.platform.btnModify
+                        : copy.platform.btnRecord}
                     </DialogTrigger>
                     <DialogContent className="rounded-xl max-w-md">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                           <ShieldCheck className="size-5 text-signal" />
-                          Compuerta de Aprobación Operativa
+                          {copy.platform.operatorModalTitle}
                         </DialogTitle>
                         <DialogDescription>
-                          El agente recomienda:{" "}
+                          {copy.platform.operatorModalDesc}{" "}
                           <strong className="text-ink font-mono">
                             {scenario.recommendation.recommended_action}
                           </strong>
-                          . Esta decisión se registra formalmente en la auditoría sin despacho autónomo.
+                          . {copy.platform.operatorModalAudited}
                         </DialogDescription>
                       </DialogHeader>
 
                       <div className="grid gap-4 py-2">
                         <div className="grid gap-1.5">
-                          <Label htmlFor="op-name">Nombre / ID del Operador</Label>
+                          <Label htmlFor="op-name">{copy.platform.operatorName}</Label>
                           <Input
                             id="op-name"
                             value={operatorName}
                             onChange={(e) => setOperatorName(e.target.value)}
-                            placeholder="Ej. Juan Pérez - Turno Poniente"
+                            placeholder={copy.platform.operatorPlaceholder}
                           />
                         </div>
 
@@ -669,11 +669,9 @@ export function Console({
 
                         <div className="rounded-md bg-field p-3 text-xs text-muted-foreground border border-rule">
                           <p className="flex items-center gap-1 font-semibold text-ink mb-1">
-                            <Lock className="size-3.5 text-signal" /> Garantía de Seguridad:
+                            <Lock className="size-3.5 text-signal" /> {copy.platform.securityGuarantee}
                           </p>
-                          La aprobación se graba en <code className="font-mono">logs/approvals.jsonl</code>. El
-                          sistema mantiene <code className="font-mono">applied = false</code> y nunca desvía una ruta
-                          por sí mismo.
+                          {copy.platform.securityText}
                         </div>
 
                         <div className="flex gap-2 pt-2">
@@ -681,14 +679,14 @@ export function Console({
                             onClick={() => handleApproval("approve")}
                             className="flex-1 bg-clear hover:bg-clear/90 text-white cursor-pointer"
                           >
-                            Aprobar Acción
+                            {copy.platform.btnApprove}
                           </Button>
                           <Button
                             variant="outline"
                             onClick={() => handleApproval("reject")}
                             className="flex-1 border-hold/40 text-hold hover:bg-hold/10 cursor-pointer"
                           >
-                            Rechazar
+                            {copy.platform.btnReject}
                           </Button>
                         </div>
                       </div>
@@ -710,12 +708,13 @@ export function Console({
           </div>
         </section>
 
+        {/* Signal Series */}
         <section className="overflow-hidden rounded-xl border border-rule bg-card">
           <header className="border-b border-rule px-4 py-3">
             <h2 className="text-sm font-medium">{copy.platform.series}</h2>
             <p className="text-sm text-muted-foreground">{copy.platform.seriesNote}</p>
           </header>
-          {( ["report", "vehicle", "camera", "road"] as SignalKind[]).map((kind) => (
+          {(["report", "vehicle", "camera", "road"] as SignalKind[]).map((kind) => (
             <SignalLane
               key={kind}
               kind={kind}
@@ -727,10 +726,8 @@ export function Console({
           ))}
         </section>
 
-        <TraceLog lang={lang} views={views} fileId={scenario.file_id} />
+        {/* Data Source Tables */}
         <SourceRack lang={lang} scenarioId={scenario.scenario_id} tables={tables} />
-        </>
-        )}
       </main>
       <SiteFooter surface="work" />
     </div>

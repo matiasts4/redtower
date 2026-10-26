@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ApprovalCard, DamageComparison, RankTable, SentenceBlock, SignalLane, StatusMark } from "@/components/ops";
 import { SourceItem } from "@/components/source-rack";
 import { TraceRow, type TraceState } from "@/components/trace-log";
+import { ExecutionFlow } from "@/components/execution-flow";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -18,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { chromeCopy } from "@/lib/copy";
 import { useLanguage } from "@/lib/i18n";
 import { SOURCES } from "@/lib/sources";
+import type { RealTraceStep } from "@/lib/load-trace";
 
 const blockRows = [
   { action: "wait", passenger_minutes: 2400, cost: "low", risk: "high" },
@@ -30,6 +32,93 @@ const traceSamples: Array<{ actor: string; action: string; summary: string; auth
   { actor: "host", action: "load_sources", summary: "11 sources", authority: "decides", state: "done" },
   { actor: "host", action: "rank_alternatives", summary: "relief_and_divert_210 1488", authority: "decides", state: "working" },
   { actor: "reporter", action: "explain", summary: "REP_BLK_1", authority: "explains", state: "idle" },
+];
+
+const sampleExecutionSteps: RealTraceStep[] = [
+  {
+    id: "planner" as any,
+    actor: "planner",
+    action: "select_queries",
+    decides: false,
+    summary: "Selected 11 named queries from catalog",
+    lines: [],
+    model: "nvidia/nemotron-3-ultra-550b-a55b",
+    durationMs: 1200,
+    inputSummary: "Scenario scn-block. Query catalog size: 11.",
+    outputRaw: '{"queries": ["positions", "reports", "cameras", "road_events", "demand"]}',
+    status: "ok",
+    isReal: true,
+  },
+  {
+    id: "load" as any,
+    actor: "host",
+    action: "load_sources",
+    decides: true,
+    summary: "ZetarisSource: reports=3, cameras=1, positions=12",
+    lines: [],
+    model: "host",
+    durationMs: 450,
+    inputSummary: "Named queries: positions, reports, cameras, road_events, demand",
+    outputRaw: "Zetaris REST API execution successful across 11 tables",
+    status: "ok",
+    isReal: true,
+  },
+  {
+    id: "diagnostician" as any,
+    actor: "diagnostician",
+    action: "diagnostician",
+    decides: false,
+    summary: "Proposed road_block based on sensor rows (untrusted report isolated)",
+    lines: [],
+    model: "nvidia/nemotron-3-ultra-550b-a55b",
+    durationMs: 1400,
+    inputSummary: "Row summary and untrusted reports block",
+    outputRaw: '{"status": "real", "incident_type": "road_block", "evidence_ids": ["REP_BLK_1"]}',
+    status: "ok",
+    isReal: true,
+  },
+  {
+    id: "rank" as any,
+    actor: "host",
+    action: "rank_alternatives",
+    decides: true,
+    summary: "relief_and_divert_210: 1488 vs 2400 passenger-minutes (38% reduction)",
+    lines: [],
+    model: "host",
+    durationMs: 100,
+    inputSummary: "Queue simulation at horizon 20 min across 4 action curves",
+    outputRaw: "Winner: relief_and_divert_210, 1488 passenger-minutes",
+    status: "ok",
+    isReal: true,
+  },
+  {
+    id: "reporter" as any,
+    actor: "reporter",
+    action: "explain",
+    decides: false,
+    summary: "Draft #1 rejected (lacks evidence citation)",
+    lines: [],
+    model: "nvidia/nemotron-3.5-lightning-30b-a3b",
+    durationMs: 1800,
+    inputSummary: "Operator sentence explanation",
+    outputRaw: "Recomendamos enviar un refuerzo y desviar el 210.",
+    status: "retry",
+    isReal: true,
+  },
+  {
+    id: "reporter" as any,
+    actor: "reporter",
+    action: "explain",
+    decides: false,
+    summary: "Draft #2 accepted with REP_BLK_1 and 38%",
+    lines: [],
+    model: "nvidia/nemotron-3.5-lightning-30b-a3b",
+    durationMs: 2100,
+    inputSummary: "Operator sentence with citations",
+    outputRaw: "Con la evidencia REP_BLK_1, la opción recomendada reduce 1488 minutos-pasajero en 20 minutos (38% vs esperar).",
+    status: "ok",
+    isReal: true,
+  },
 ];
 
 export function SystemSpecimens() {
@@ -46,6 +135,17 @@ export function SystemSpecimens() {
           {copy.componentsPage.specimens}
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{copy.componentsPage.specimensBody}</p>
+      </div>
+
+      <div className="grid gap-3">
+        <h3 className="text-sm font-medium">{copy.executionFlow.title}</h3>
+        <ExecutionFlow
+          lang={lang}
+          steps={sampleExecutionSteps}
+          running={false}
+          elapsed={0}
+          isReal={true}
+        />
       </div>
 
       <div className="grid gap-3">
