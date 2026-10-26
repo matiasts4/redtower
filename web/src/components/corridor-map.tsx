@@ -5,6 +5,8 @@ import { AlertTriangle, Bus, Camera, CheckCircle2, Construction, Info, Users } f
 import type { ScenarioFile } from "@/lib/scenarios";
 import type { SourceRow } from "@/lib/sources";
 import { Badge } from "@/components/ui/badge";
+import { chromeCopy } from "@/lib/copy";
+import { useLanguage } from "@/lib/i18n";
 
 type StopData = {
   stop_id: string;
@@ -42,6 +44,8 @@ export function CorridorMap({
   scenario: ScenarioFile;
   tables?: Record<string, SourceRow[]>;
 }) {
+  const { lang } = useLanguage();
+  const copy = chromeCopy[lang].corridorMap;
   const [selectedStop, setSelectedStop] = useState<string | null>(null);
 
   const affectedStops = useMemo(
@@ -51,6 +55,11 @@ export function CorridorMap({
 
   const slowVehicleSet = useMemo(
     () => new Set(scenario.impact.slow_vehicle_ids || []),
+    [scenario.impact.slow_vehicle_ids],
+  );
+
+  const stoppedVehicleId = useMemo(
+    () => scenario.impact.slow_vehicle_ids?.[0] ?? "BUS_210_04",
     [scenario.impact.slow_vehicle_ids],
   );
 
@@ -76,26 +85,26 @@ export function CorridorMap({
   const isSurge = scenario.incident.incident_type === "demand_surge";
 
   return (
-    <section className="overflow-hidden rounded-xl border border-rule bg-card">
+    <section className="overflow-hidden rounded-xl border border-rule bg-card shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-4 py-3">
         <div>
-          <h2 className="text-sm font-medium">Corredor Poniente · Monitoreo Espacial</h2>
+          <h2 className="text-sm font-semibold">{copy.title}</h2>
           <p className="text-xs text-muted-foreground">
-            18 paraderos en orden lineal · Tramo afectado: {affectedStops.size} paraderos
+            {copy.subtitle} {affectedStops.size} {copy.stops}
             {scenario.impact.routes.length > 0
-              ? ` · Recorridos: ${scenario.impact.routes.join(", ")}`
+              ? ` · ${chromeCopy[lang].corridorPage.routes}: ${scenario.impact.routes.join(", ")}`
               : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {affectedStops.size > 0 ? (
-            <Badge className="bg-signal/15 text-signal border-signal/30">
-              Impacto: STOP_{Array.from(affectedStops)[0]?.replace("STOP_", "")} a STOP_
+            <Badge className="bg-signal/15 text-signal border-signal/30 font-mono text-[11px]">
+              STOP_{Array.from(affectedStops)[0]?.replace("STOP_", "")} → STOP_
               {Array.from(affectedStops).slice(-1)[0]?.replace("STOP_", "")}
             </Badge>
           ) : (
-            <Badge className="bg-clear/15 text-clear border-clear/30">
-              Corredor despejado
+            <Badge className="bg-clear/15 text-clear border-clear/30 font-mono text-[11px]">
+              {copy.corridorClear}
             </Badge>
           )}
         </div>
@@ -165,7 +174,7 @@ export function CorridorMap({
                       textAnchor="middle"
                       className="fill-signal font-mono text-[10px] font-semibold uppercase tracking-wider"
                     >
-                      Zona de Impacto Estimada ({affectedStops.size} paraderos)
+                      {copy.impactZone} ({affectedStops.size} {copy.stops})
                     </text>
                   </g>
                 );
@@ -208,7 +217,7 @@ export function CorridorMap({
                   textAnchor="middle"
                   className="fill-hold font-mono text-[10px] font-bold"
                 >
-                  BUS_210_01
+                  {stoppedVehicleId}
                 </text>
               </g>
             )}
@@ -296,24 +305,24 @@ export function CorridorMap({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-sm">{stop.stop_id}</span>
-                    <span className="text-muted-foreground">· Orden {stop.order} de 18</span>
+                    <span className="text-muted-foreground">· {copy.orderOf18} {stop.order} {copy.of18}</span>
                     <span className="text-muted-foreground font-mono">
                       ({stop.lat}, {stop.lon})
                     </span>
                     <Badge
                       className={
                         isAff
-                          ? "bg-signal/15 text-signal border-signal/30"
-                          : "bg-clear/15 text-clear border-clear/30"
+                          ? "bg-signal/15 text-signal border-signal/30 font-mono text-[10px]"
+                          : "bg-clear/15 text-clear border-clear/30 font-mono text-[10px]"
                       }
                     >
-                      {isAff ? "Dentro del impacto" : "Servicio normal"}
+                      {isAff ? copy.withinImpact : copy.normalService}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Buses cercanos:</span>
+                    <span className="text-muted-foreground">{copy.nearbyBuses}</span>
                     {stopVehicles.length === 0 ? (
-                      <span className="font-mono text-muted-foreground">0</span>
+                      <span className="font-mono text-muted-foreground">{copy.noBuses}</span>
                     ) : (
                       stopVehicles.map((v) => {
                         const isSlow = slowVehicleSet.has(v.vehicle_id);
@@ -339,14 +348,14 @@ export function CorridorMap({
             <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
               <span className="flex items-center gap-2">
                 <Info className="size-4 shrink-0" />
-                Hacé clic en cualquier paradero (01 a 18) para inspeccionar coordenadas y buses en tiempo real.
+                {copy.clickPrompt}
               </span>
               <div className="flex items-center gap-4 font-mono text-[11px]">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-signal" /> Impactado / Lento
+                  <span className="size-2.5 rounded-full bg-signal" /> {copy.impactedOrSlow}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-clear" /> Normal en movimiento
+                  <span className="size-2.5 rounded-full bg-clear" /> {copy.normalMoving}
                 </span>
               </div>
             </div>

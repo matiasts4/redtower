@@ -49,6 +49,7 @@ export type ScenarioFile = {
     saved: number;
     reduction_percent: number;
     text: string;
+    host_text?: string;
     action: string;
   };
   diagnosis: string;

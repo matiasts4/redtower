@@ -4,45 +4,43 @@ import { useMemo, useState } from "react";
 import { TrendingDown, Users, Zap } from "lucide-react";
 import type { ScenarioFile } from "@/lib/scenarios";
 import { Badge } from "@/components/ui/badge";
+import { chromeCopy } from "@/lib/copy";
+import { useLanguage } from "@/lib/i18n";
 
-const COLOR_MAP: Record<string, { stroke: string; fill: string; label: string; dash?: string }> = {
+const COLOR_MAP: Record<string, { stroke: string; fill: string; dash?: string }> = {
   wait: {
     stroke: "#B33927",
     fill: "rgba(179, 57, 39, 0.15)",
-    label: "Esperar (Línea Base)",
     dash: "4 3",
   },
   hold: {
     stroke: "#8A5A12",
     fill: "rgba(138, 90, 18, 0.15)",
-    label: "Mantener Operación",
     dash: "4 3",
   },
   divert_210: {
     stroke: "#4A6FA5",
     fill: "rgba(74, 111, 165, 0.15)",
-    label: "Desvío Recorrido 210",
   },
   dispatch_relief: {
     stroke: "#7B5EA7",
     fill: "rgba(123, 94, 167, 0.15)",
-    label: "Bus de Refuerzo",
   },
   relief_and_divert_210: {
     stroke: "#2F5D45",
     fill: "rgba(47, 93, 69, 0.25)",
-    label: "Refuerzo + Desvío (Óptima)",
   },
 };
 
 export function QueueChart({ scenario }: { scenario: ScenarioFile }) {
+  const { lang } = useLanguage();
+  const copy = chromeCopy[lang].queueChart;
   const [hoveredMin, setHoveredMin] = useState<number | null>(null);
 
   const alternatives = useMemo(() => {
     return scenario.alternatives.map((alt) => {
       let series = alt.queue_series;
       if (!series || series.length === 0) {
-        // Fallback compute
         const waiting = scenario.impact.waiting;
         let arrival = scenario.impact.arrival_per_min;
         let board = scenario.impact.board_per_min;
@@ -63,17 +61,20 @@ export function QueueChart({ scenario }: { scenario: ScenarioFile }) {
         sim.push(q);
         series = sim;
       }
+
+      const colorData = COLOR_MAP[alt.action] || { stroke: "#666", fill: "transparent" };
+      const label = copy.actions[alt.action as keyof typeof copy.actions] || alt.action;
+
       return {
         ...alt,
         queue_series: series,
-        color: COLOR_MAP[alt.action] || {
-          stroke: "#666",
-          fill: "transparent",
-          label: alt.action,
+        color: {
+          ...colorData,
+          label,
         },
       };
     });
-  }, [scenario]);
+  }, [scenario, copy]);
 
   const maxQueue = useMemo(() => {
     let max = 1;
@@ -101,20 +102,18 @@ export function QueueChart({ scenario }: { scenario: ScenarioFile }) {
   const baselineAlt = alternatives.find((a) => a.action === "wait" || a.action === "hold");
 
   return (
-    <section className="overflow-hidden rounded-xl border border-rule bg-card">
+    <section className="overflow-hidden rounded-xl border border-rule bg-card shadow-xs">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-4 py-3">
         <div>
-          <h2 className="text-sm font-medium flex items-center gap-2">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
             <TrendingDown className="size-4 text-clear" />
-            Simulación de Colas · Evolución de Pasajeros en Espera (20 min)
+            {copy.title}
           </h2>
-          <p className="text-xs text-muted-foreground">
-            Métrica determinista del Host: cada punto representa pasajeros esperando en el minuto t
-          </p>
+          <p className="text-xs text-muted-foreground">{copy.subtitle}</p>
         </div>
         {scenario.recommendation.reduction_percent > 0 ? (
-          <Badge className="bg-clear/15 text-clear border-clear/30 font-mono">
-            -{scenario.recommendation.reduction_percent}% impacto ({scenario.recommendation.saved} min-pax ahorrados)
+          <Badge className="bg-clear/15 text-clear border-clear/30 font-mono text-[11px]">
+            -{scenario.recommendation.reduction_percent}% {copy.impactReduction} ({scenario.recommendation.saved} {copy.paxMinutesSaved})
           </Badge>
         ) : null}
       </header>
@@ -282,10 +281,10 @@ export function QueueChart({ scenario }: { scenario: ScenarioFile }) {
 
           {hoveredMin !== null && (
             <div className="rounded bg-field px-3 py-1 font-mono text-[11px] border border-rule flex items-center gap-3">
-              <span className="font-bold">Minuto {hoveredMin}:</span>
+              <span className="font-bold">{copy.minuteLabel} {hoveredMin}:</span>
               {alternatives.map((alt) => (
                 <span key={alt.action} style={{ color: alt.color.stroke }}>
-                  {alt.action}: {(alt.queue_series || [])[hoveredMin]} pax
+                  {alt.action}: {(alt.queue_series || [])[hoveredMin]} {copy.paxUnit}
                 </span>
               ))}
             </div>
