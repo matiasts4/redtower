@@ -2,8 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { chromeCopy } from "@/lib/copy";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { chromeCopy, type ChromeLang } from "@/lib/copy";
 import { useLanguage } from "@/lib/i18n";
 
 const links = [
@@ -13,6 +21,11 @@ const links = [
   ["method", "/#method"],
   ["limits", "/#limits"],
 ] as const;
+
+const languages: Record<ChromeLang, string> = {
+  en: "English",
+  es: "Español",
+};
 
 export function SiteHeader({ surface = "public" }: { surface?: "public" | "work" }) {
   const pathname = usePathname();
@@ -56,12 +69,39 @@ export function SiteHeader({ surface = "public" }: { surface?: "public" | "work"
           })}
         </nav>
         <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <Button variant={lang === "en" ? "default" : "outline"} onClick={() => setLang("en")}>
-            EN
-          </Button>
-          <Button variant={lang === "es" ? "default" : "outline"} onClick={() => setLang("es")}>
-            ES
-          </Button>
+          <Select
+            items={languages}
+            value={lang}
+            onValueChange={(val) => {
+              if (val === "en" || val === "es") {
+                setLang(val);
+              }
+            }}
+          >
+            <SelectTrigger
+              aria-label={lang === "es" ? "Seleccionar idioma" : "Select language"}
+              className="data-[size=default]:h-11 min-h-11 rounded-full border-border bg-background px-3.5 text-sm font-medium hover:bg-muted"
+            >
+              <div className="flex items-center gap-2">
+                <Globe className="size-4 text-muted-foreground" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent align="end" className="min-w-36">
+              <SelectItem value="en">
+                <span className="flex items-center justify-between gap-3 w-full">
+                  <span>English</span>
+                  <span className="text-xs text-muted-foreground">EN</span>
+                </span>
+              </SelectItem>
+              <SelectItem value="es">
+                <span className="flex items-center justify-between gap-3 w-full">
+                  <span>Español</span>
+                  <span className="text-xs text-muted-foreground">ES</span>
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="outline" nativeButton={false} render={<Link href="/system" />}>
             {copy.nav.system}
           </Button>
