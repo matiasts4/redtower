@@ -22,9 +22,19 @@ export function SiteHeader({ surface = "public" }: { surface?: "public" | "work"
 
   return (
     <header className="sticky top-0 z-30 border-b border-rule bg-paper/95 backdrop-blur">
-      <div className={`mx-auto flex flex-wrap items-center gap-4 px-4 py-3 md:px-8 ${work ? "max-w-7xl" : "max-w-6xl"}`}>
+      <div
+        className={`mx-auto flex flex-wrap items-center gap-4 px-4 py-3 md:px-6 lg:px-8 2xl:px-12 ${
+          work ? "max-w-[1880px] w-full" : "max-w-6xl"
+        }`}
+      >
         <Link href="/" className="flex items-baseline gap-2">
-          <span className={work ? "text-sm font-medium tracking-[0.14em] text-signal" : "font-display text-2xl italic leading-none text-signal"}>
+          <span
+            className={
+              work
+                ? "text-sm font-medium tracking-[0.14em] text-signal"
+                : "font-display text-2xl italic leading-none text-signal"
+            }
+          >
             {copy.masthead.signal}
           </span>
           <span className="text-xs tracking-[0.16em] uppercase">{copy.masthead.product}</span>

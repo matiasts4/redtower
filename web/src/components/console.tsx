@@ -347,7 +347,7 @@ export function Console({
   return (
     <div className="min-h-full bg-paper">
       <SiteHeader surface="work" />
-      <main className="mx-auto grid max-w-7xl gap-4 px-4 py-6 md:px-6">
+      <main className="mx-auto grid w-full max-w-[1880px] gap-5 px-4 py-6 md:px-6 lg:px-8 2xl:px-12">
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-rule pb-4">
           <div>
             <div className="flex items-center gap-2">
@@ -448,18 +448,18 @@ export function Console({
         </section>
 
         {/* Scenario Switcher */}
-        <div className="grid gap-3">
-          <div className="relative max-w-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-64 shrink-0">
             <Search className="pointer-events-none absolute top-3.5 left-4 size-4 text-muted-foreground" />
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={copy.platform.search}
-              className="pl-10"
+              className="pl-10 h-11"
               aria-label={copy.platform.search}
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-1 items-center gap-2 overflow-x-auto pb-1">
             {visible.map((item) => {
               const active = item.file_id === scenario.file_id;
               return (
@@ -500,8 +500,9 @@ export function Console({
         />
 
         {/* Decision & Response Grid */}
-        <section className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="grid gap-4">
+        <section className="grid items-start gap-5 lg:grid-cols-12">
+          {/* Left Wing (Cols 1-7): Diagnostic & Decision Authority */}
+          <div className="lg:col-span-7 flex flex-col gap-5">
             <section className="grid gap-4 rounded-xl border border-rule bg-card p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusMark status={scenario.incident.status} />
@@ -581,9 +582,6 @@ export function Console({
               </p>
             </section>
 
-            {/* Queue depletion simulation curve */}
-            <QueueChart scenario={scenario} />
-
             <section className="grid gap-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2 px-1">
                 <h2 className="text-sm font-medium">{copy.actions.label}</h2>
@@ -604,7 +602,11 @@ export function Console({
             </section>
           </div>
 
-          <div className="grid content-start gap-4">
+          {/* Right Wing (Cols 8-12): Simulation Queue Dynamics & Operator Gate */}
+          <div className="lg:col-span-5 flex flex-col gap-5">
+            {/* Queue depletion simulation curve */}
+            <QueueChart scenario={scenario} />
+
             <ApprovalCard
               title={copy.approval.label}
               authorization={scenario.authorization}

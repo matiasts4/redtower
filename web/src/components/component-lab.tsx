@@ -84,7 +84,7 @@ export function ComponentLab() {
   return (
     <div className="min-h-full bg-paper">
       <SiteHeader surface="work" />
-      <main className="mx-auto grid max-w-7xl gap-10 px-4 py-10 md:px-8">
+      <main className="mx-auto grid w-full max-w-[1880px] gap-10 px-4 py-8 md:px-6 lg:px-8 2xl:px-12">
         <PageIntro
           kicker={copy.componentsPage.kicker}
           title={copy.componentsPage.title}
