@@ -15,6 +15,7 @@ Evidencia insuficiente. No recomiendo modificar la operación. Reporte REP_FALSE
 - **Passenger-minutes (20 min):** 0
 - **Reduction vs baseline:** 0%
 - **Explanation source:** reporter
+- **Host sentence:** Evidencia insuficiente. No recomiendo modificar la operación.
 
 ## Alternatives
 

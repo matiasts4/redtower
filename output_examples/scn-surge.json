@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-surge",
-  "trace_file": "trace_20261023T154130328075Z.jsonl",
+  "trace_file": "trace_20261026T115426766409Z.jsonl",
   "model": "fixture",
   "incident": {
     "status": "real",
@@ -95,6 +95,7 @@
     "saved": 3970,
     "reduction_percent": 77,
     "text": "Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.",
+    "host_text": "Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.",
     "action": "dispatch_relief"
   },
   "diagnosis": "El incidente probablemente es real. Afecta a tres recorridos, cuatro paraderos y aproximadamente 800 pasajeros durante los próximos 20 minutos.",

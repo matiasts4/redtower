@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-stopped",
-  "trace_file": "trace_20261023T154116890986Z.jsonl",
+  "trace_file": "trace_20261026T115426548174Z.jsonl",
   "model": "fixture",
   "incident": {
     "status": "real",
@@ -97,6 +97,7 @@
     "saved": 2466,
     "reduction_percent": 91,
     "text": "Con la evidencia BUS_210_04, la opción recomendada reduce 234 minutos-pasajero en 20 minutos (91% vs esperar).",
+    "host_text": "Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.",
     "action": "dispatch_relief"
   },
   "diagnosis": "El incidente probablemente es real. Afecta a un recorridos, cuatro paraderos y aproximadamente 240 pasajeros durante los próximos 20 minutos.",

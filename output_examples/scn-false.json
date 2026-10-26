@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-false",
-  "trace_file": "trace_20261023T154116502872Z.jsonl",
+  "trace_file": "trace_20261026T115426107096Z.jsonl",
   "model": "fixture",
   "incident": {
     "status": "insufficient",
@@ -59,6 +59,7 @@
     "saved": 0,
     "reduction_percent": 0,
     "text": "Evidencia insuficiente. No recomiendo modificar la operación. Reporte REP_FALSE_1; 0 minutos-pasajero; 0%.",
+    "host_text": "Evidencia insuficiente. No recomiendo modificar la operación.",
     "action": "hold"
   },
   "diagnosis": "Evidencia insuficiente. No recomiendo modificar la operación.",

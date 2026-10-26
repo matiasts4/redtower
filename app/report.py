@@ -20,10 +20,15 @@ def render_markdown(result: dict) -> str:
         f"- **Passenger-minutes (20 min):** {recommendation.get('passenger_minutes', '')}",
         f"- **Reduction vs baseline:** {recommendation.get('reduction_percent', 0)}%",
         f"- **Explanation source:** {result.get('explanation_source', '')}",
+    ]
+    host_text = recommendation.get("host_text")
+    if host_text and host_text != recommendation.get("text"):
+        lines.append(f"- **Host sentence:** {host_text}")
+    lines.extend([
         "",
         "## Alternatives",
         "",
-    ]
+    ])
     alternatives = result.get("alternatives") or []
     if not alternatives:
         lines.append("_None_")

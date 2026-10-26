@@ -1,7 +1,7 @@
 {
   "scenario_id": "scn-block",
-  "trace_file": "trace_20261023T115632974074Z.jsonl",
-  "model": "fixture",
+  "trace_file": "trace_20261023T173809091692Z.jsonl",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b",
   "incident": {
     "status": "real",
     "incident_type": "road_block",
@@ -171,7 +171,8 @@
     "baseline_passenger_minutes": 2400,
     "saved": 912,
     "reduction_percent": 38,
-    "text": "Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. Esta opción reduce el impacto estimado en 38% frente a esperar.",
+    "text": "Frente al bloqueo en AV023 evidenciado por REP_BLK_1, se despliega un bus de refuerzo y se desvia el recorrido 210, afectando 1488 minutos-pasajero en 20 minutos pero reduciendo el impacto en un 38% frente a la opción de esperar.",
+    "host_text": "Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. Esta opción reduce el impacto estimado en 38% frente a esperar.",
     "action": "relief_and_divert_210"
   },
   "diagnosis": "El incidente probablemente es real. Afecta a cuatro recorridos, nueve paraderos y aproximadamente 1.800 pasajeros durante los próximos 20 minutos.",
@@ -191,5 +192,9 @@
   "limitations": [
     "The system does not change routes.",
     "Recommendations require human approval before any operational change."
-  ]
+  ],
+  "query_source": "planner",
+  "classification_source": "agreed",
+  "explanation_source": "reporter",
+  "judge_agreed": true
 }

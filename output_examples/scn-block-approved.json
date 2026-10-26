@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-block",
-  "trace_file": "trace_20261023T154117284364Z.jsonl",
+  "trace_file": "trace_20261026T115426995248Z.jsonl",
   "model": "fixture",
   "incident": {
     "status": "real",
@@ -172,6 +172,7 @@
     "saved": 912,
     "reduction_percent": 38,
     "text": "Con la evidencia REP_BLK_1, la opción recomendada reduce 1488 minutos-pasajero en 20 minutos (38% vs esperar).",
+    "host_text": "Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. Esta opción reduce el impacto estimado en 38% frente a esperar.",
     "action": "relief_and_divert_210"
   },
   "diagnosis": "El incidente probablemente es real. Afecta a cuatro recorridos, nueve paraderos y aproximadamente 1.800 pasajeros durante los próximos 20 minutos.",

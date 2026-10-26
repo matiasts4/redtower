@@ -143,6 +143,7 @@ def run_scenario(
     recommendation = {
         **ranked,
         "text": recommendation_text_stored,
+        "host_text": recommendation_sentence,
         "action": ranked["recommended_action"],
     }
 

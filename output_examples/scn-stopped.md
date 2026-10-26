@@ -15,6 +15,7 @@ Con la evidencia BUS_210_04, la opción recomendada reduce 234 minutos-pasajero 
 - **Passenger-minutes (20 min):** 234
 - **Reduction vs baseline:** 91%
 - **Explanation source:** reporter
+- **Host sentence:** Enviar un bus de refuerzo. Esta opción reduce el impacto estimado frente a esperar.
 
 ## Alternatives
 

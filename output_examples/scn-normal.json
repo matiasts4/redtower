@@ -1,6 +1,6 @@
 {
   "scenario_id": "scn-normal",
-  "trace_file": "trace_20261023T154116333498Z.jsonl",
+  "trace_file": "trace_20261026T115425883881Z.jsonl",
   "model": "fixture",
   "incident": {
     "status": "clear",
@@ -57,6 +57,7 @@
     "saved": 0,
     "reduction_percent": 0,
     "text": "La operación del corredor está dentro de lo esperado. No recomiendo modificar el servicio.",
+    "host_text": "La operación del corredor está dentro de lo esperado. No recomiendo modificar el servicio.",
     "action": "hold"
   },
   "diagnosis": "La operación del corredor está dentro de lo esperado. No recomiendo modificar el servicio.",

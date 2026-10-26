@@ -15,6 +15,7 @@ Con la evidencia REP_BLK_1, la opción recomendada reduce 1488 minutos-pasajero 
 - **Passenger-minutes (20 min):** 1488
 - **Reduction vs baseline:** 38%
 - **Explanation source:** reporter
+- **Host sentence:** Enviar un bus de refuerzo y desviar temporalmente el recorrido 210. Esta opción reduce el impacto estimado en 38% frente a esperar.
 
 ## Alternatives
 
