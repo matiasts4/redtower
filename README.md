@@ -155,7 +155,7 @@ No other repository is vendored in this project.
 
 ## Web Control Room
 
-A Next.js app under `web/` reads the JSON files in `output_examples/` and can launch `python run.py`. It does not recompute a decision and it does not set `applied`. Sample mode needs no API keys. Live mode runs only when `python run.py --check` exits 0, which means Zetaris and Nightshift settings are present. See `web/README.md`.
+A Next.js app under `web/` reads the JSON files in `output_examples/` and can launch `python run.py`. It features an interactive **Multi-Agent Execution Flow** with switchable 2D DAG Graph and Hierarchical Tree views, visualizing agent delegations, SVG connectors, telemetry inspection, and Host Critic retry loops (`reject_queries`, `reject_classification`, `reject_judge_action`, `request_evidence_citation`). It does not recompute a decision and it does not set `applied`. Sample mode needs no API keys. Live mode runs only when `python run.py --check` exits 0, which means Zetaris and Nightshift settings are present. See `web/README.md`.
 
 ```bash
 cd web
@@ -164,6 +164,12 @@ npm run dev
 ```
 
 Open `http://localhost:3010/` for the landing page and `http://localhost:3010/system` for the operating view. Port 3000 stays with Zetaris. From `/system`, Sample runs `run.py --sample --stream` and writes `logs/web_<scenario>.json`. Live stays disabled until `run.py --check` exits 0.
+
+## Sponsor Tech & HackOS Deliverables
+
+For the complete official answers ready to submit in the HackOS form (covering Zetaris Data Fabric, Meterless Nightshift runtime, Cursor environment, NVIDIA Nemotron model family, and architectural innovation), see:
+- [`SPONSOR_TECH_HACKOS.md`](file:///e:/OpenAgentHackathon/redtower/SPONSOR_TECH_HACKOS.md)
+- Root copy: [`../estrategia/entregable-4-sponsor-tech-redtower.md`](file:///e:/OpenAgentHackathon/estrategia/entregable-4-sponsor-tech-redtower.md)
 
 ## Limitations
 
@@ -177,5 +183,14 @@ Open `http://localhost:3010/` for the landing page and `http://localhost:3010/sy
 ## Verification
 
 ```bash
+# Python backend test suite (55 unit & integration tests)
 python -m unittest discover -s tests -v
+
+# Smoke test suite (validates inputs, sample/fixture execution, missing scenario rejection)
+python scripts/smoke_test.py
+
+# Frontend test suite and production build (in web/)
+cd web
+npm test
+npm run build
 ```
