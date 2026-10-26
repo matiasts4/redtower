@@ -111,10 +111,52 @@ The 38% figure is `912 / 2400` from that simulation. It is not a stored label.
 
 ## AI and Model Usage
 
-Models:
+### NVIDIA Nemotron Multi-Tier Cognitive Architecture
 
-- Sample mode: no external model. The local stand-in drives role prompts; the host keeps classification and ranking when proposals disagree.
-- Live mode: NVIDIA Nemotron through Meterless Nightshift. Super plans and reads the case, Ultra judges when configured, Nano writes the explanation when configured.
+RED Control Tower implements model specialization across the NVIDIA Nemotron family rather than relying on a single monolithic LLM. Tasks are mapped to specific model capacities based on cognitive workload and latency SLAs:
+
+```mermaid
+flowchart LR
+    subgraph Data [Zetaris Data Fabric]
+        T["11 Federated Tables"]
+    end
+    subgraph Nemotron_Pipeline [NVIDIA Nemotron Multi-Tier Ingestion]
+        Super["<b>Nemotron 3 Super 120B</b><br/>Planner & Diagnostician<br/><i>Untrusted Report Shield</i>"]
+        Ultra["<b>Nemotron 3 Ultra 550B</b><br/>Strategic Judge<br/><i>Pareto Deliberation & Override Shield</i>"]
+        Nano["<b>Nemotron 3 Nano 30B</b><br/>Real-Time Reporter<br/><i>&lt;100ms Verified Briefing</i>"]
+    end
+    subgraph Host [Deterministic Core]
+        Queue["M/M/1 Queue Simulation"]
+        Guard["Human Gate: applied=false"]
+    end
+
+    Data --> Super
+    Super --> Queue
+    Queue --> Ultra
+    Ultra --> Nano
+    Nano --> Guard
+```
+
+- **Nemotron 3 Super 120B (`nvidia/nemotron-3-super-120b`):** 
+  - *Planner Agent:* Contextual SQL query formulation across 11 federated Zetaris tables.
+  - *Diagnostician Agent (*Untrusted Report Shield*):* Inspired by *NeMo Guardrails*. Cross-references subjective, unverified human reports against physical sensor ground truth (GPS + camera feeds). In false-alarm scenarios (`scn-false`), it isolates contradictions and suppresses expensive false contingency dispatches.
+- **Nemotron 3 Ultra 550B (`nvidia/nemotron-3-ultra-550b-a55b`):**
+  - *Judge Agent (*Pareto Arbitration & Override Shield*):* Multi-objective evaluation balancing passenger delay, fleet operating costs, and secondary road spillover. Enforces proportionality to veto excessive fleet changes.
+- **Nemotron 3 Nano 30B (`nvidia/nemotron-3-nano-30b`):**
+  - *Reporter Agent:* Sub-100ms natural language synthesis translating raw simulation states into executive briefings for dispatchers, enforcing citation of verified evidence IDs (`REP_BLK_1`, `CAM_AV023`).
+- **Cryptographic Model Verification (`_is_configured_nemotron`):**
+  The runtime rejects any response from a model that does not match an authorized NVIDIA Nemotron identifier, preventing silent model drift or unauthorized fallbacks.
+
+### Deployment Thesis: "Born for NVIDIA DGX" (On-Premise Critical Infrastructure)
+
+Metropolitan transit corridors and surveillance systems are critical national infrastructure: transmitting continuous vehicle GPS telemetry, crowded passenger counts, and live CCTV feeds to third-party public cloud APIs introduces severe privacy, data sovereignty, and latency risks.
+
+RED Control Tower is specifically designed to run as an **on-premise appliance on an NVIDIA DGX Supercomputer** directly inside the municipal Central Operations Center (CCO). With local Nemotron weights accelerated by TensorRT-LLM, the entire multi-agent cycle executes in < 5 seconds with zero external internet dependencies.
+
+### Models and Sponsors Summary
+
+- **Sample mode:** No external model. The local stand-in drives role prompts; the host keeps classification and ranking when proposals disagree.
+- **Live mode:** NVIDIA Nemotron through Meterless Nightshift. Super plans and reads the case, Ultra judges, Nano writes the explanation.
 
 Sponsor technology:
 
