@@ -130,6 +130,7 @@ export function ExecutionFlow({
   }
 
   const selectedNode = graph.nodes.find((n) => n.id === selectedNodeId) || graph.nodes[0];
+  const SelectedIcon = getNodeIcon(selectedNode.id);
 
   const stages: Array<{
     num: string;
@@ -241,208 +242,266 @@ export function ExecutionFlow({
         </div>
       </header>
 
-      {/* Main Graph / Tree Canvas — Calibrated to fit viewport without horizontal scroll */}
-      <div className="p-3.5 md:p-4 bg-[radial-gradient(#d9d1c3_1px,transparent_1px)] [background-size:16px_16px] bg-paper/40">
-        {viewMode === "graph" ? (
-          <div className="flex flex-col gap-3">
-            {/* 4-Stage Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 items-stretch">
-              {stages.map((stage, stageIdx) => {
-                const stageNodes = stage.nodeIds
-                  .map((id) => graph.nodes.find((n) => n.id === id))
-                  .filter((n): n is ExecutionNode => Boolean(n));
+      {/* Main Flow Grid: Graph/Tree Canvas on Left + Detailed Inspector on Right */}
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px] divide-y xl:divide-y-0 xl:divide-x divide-rule">
+        {/* Left Side: Graph or Tree Canvas */}
+        <div className="p-3.5 md:p-4 bg-[radial-gradient(#d9d1c3_1px,transparent_1px)] [background-size:16px_16px] bg-paper/40 flex flex-col justify-between">
+          {viewMode === "graph" ? (
+            <div className="flex flex-col gap-3">
+              {/* 4-Stage Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-stretch">
+                {stages.map((stage, stageIdx) => {
+                  const stageNodes = stage.nodeIds
+                    .map((id) => graph.nodes.find((n) => n.id === id))
+                    .filter((n): n is ExecutionNode => Boolean(n));
 
-                const nextStageFirstNode =
-                  stageIdx < stages.length - 1
-                    ? graph.nodes.find((n) => n.id === stages[stageIdx + 1].nodeIds[0])
-                    : undefined;
-                const stageBridgeActive =
-                  nextStageFirstNode && nextStageFirstNode.status !== "idle";
+                  const nextStageFirstNode =
+                    stageIdx < stages.length - 1
+                      ? graph.nodes.find((n) => n.id === stages[stageIdx + 1].nodeIds[0])
+                      : undefined;
+                  const stageBridgeActive =
+                    nextStageFirstNode && nextStageFirstNode.status !== "idle";
 
-                return (
-                  <div
-                    key={stage.num}
-                    className="relative flex flex-col rounded-xl border border-rule/90 bg-card/90 p-3 shadow-2xs"
-                  >
-                    {/* Stage Header */}
-                    <div className="flex items-center justify-between gap-1.5 border-b border-rule/80 pb-2 mb-2.5">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className={`size-2 rounded-full shrink-0 ${stage.dotClass}`} />
-                        <span className="font-mono text-[11px] font-semibold tracking-wider uppercase text-ink truncate">
-                          {stage.title}
+                  return (
+                    <div
+                      key={stage.num}
+                      className="relative flex flex-col rounded-xl border border-rule/90 bg-card/90 p-3 shadow-2xs"
+                    >
+                      {/* Stage Header */}
+                      <div className="flex items-center justify-between gap-1.5 border-b border-rule/80 pb-2 mb-2.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={`size-2 rounded-full shrink-0 ${stage.dotClass}`} />
+                          <span className="font-mono text-[11px] font-semibold tracking-wider uppercase text-ink truncate">
+                            {stage.title}
+                          </span>
+                        </div>
+                        <span className="rounded bg-field px-1.5 py-0.2 font-mono text-[9px] font-semibold text-muted-foreground border border-rule">
+                          S{stage.num}
                         </span>
                       </div>
-                      <span className="rounded bg-field px-1.5 py-0.2 font-mono text-[9px] font-semibold text-muted-foreground border border-rule">
-                        S{stage.num}
-                      </span>
-                    </div>
 
-                    {/* Nodes Stack inside Stage */}
-                    <div className="flex flex-col flex-1 justify-between">
-                      {stageNodes.map((node, nodeIdx) => {
-                        const nextNode = stageNodes[nodeIdx + 1];
-                        const edgeActive = nextNode ? nextNode.status !== "idle" : false;
-                        const hasRetryOnNode =
-                          node.status === "retry" ||
-                          node.attempts.some((a) => a.status === "retry");
+                      {/* Nodes Stack inside Stage */}
+                      <div className="flex flex-col flex-1 justify-between">
+                        {stageNodes.map((node, nodeIdx) => {
+                          const nextNode = stageNodes[nodeIdx + 1];
+                          const edgeActive = nextNode ? nextNode.status !== "idle" : false;
+                          const hasRetryOnNode =
+                            node.status === "retry" ||
+                            node.attempts.some((a) => a.status === "retry");
 
-                        return (
-                          <div key={node.id} className="flex flex-col">
-                            <NodeCard
-                              node={node}
-                              selected={selectedNodeId === node.id}
-                              onSelect={() => setSelectedNodeId(node.id)}
-                              copy={flowCopy}
-                            />
-                            {nextNode ? (
-                              <EdgeConnector
-                                active={edgeActive}
-                                hasRetry={hasRetryOnNode}
+                          return (
+                            <div key={node.id} className="flex flex-col">
+                              <NodeCard
+                                node={node}
+                                selected={selectedNodeId === node.id}
+                                onSelect={() => setSelectedNodeId(node.id)}
+                                copy={flowCopy}
                               />
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Inter-Stage Horizontal Connector Bridge */}
-                    {stageIdx < stages.length - 1 ? (
-                      <div
-                        className="hidden lg:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
-                        aria-hidden
-                      >
-                        <div
-                          className={`flex items-center justify-center size-5 rounded-full border shadow-2xs transition-colors ${
-                            stageBridgeActive
-                              ? "border-signal/50 bg-card text-signal"
-                              : "border-rule bg-field text-muted-foreground/60"
-                          }`}
-                        >
-                          <ArrowRight className="size-3" />
-                        </div>
+                              {nextNode ? (
+                                <EdgeConnector
+                                  active={edgeActive}
+                                  hasRetry={hasRetryOnNode}
+                                />
+                              ) : null}
+                            </div>
+                          );
+                        })}
                       </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Compact Topology Summary Strip */}
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rule bg-card px-3 py-1.5 text-[11px] font-mono text-muted-foreground">
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="flex items-center gap-1.5 text-ink font-medium">
-                  <span className="size-2 rounded-full bg-clear" />
-                  {flowCopy.status.done}: {graph.completedCount}/9
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-signal" />
-                  Host ({flowCopy.decides})
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-hold" />
-                  Nemotron ({flowCopy.explains})
-                </span>
-                {graph.hasRetries ? (
-                  <span className="flex items-center gap-1 rounded-full bg-hold/15 border border-hold/30 px-2 py-0.2 text-[10px] text-hold font-semibold">
-                    <RotateCcw className="size-2.5" /> {flowCopy.retryLoop}
-                  </span>
-                ) : null}
+                      {/* Inter-Stage Horizontal Connector Bridge */}
+                      {stageIdx < stages.length - 1 ? (
+                        <div
+                          className="hidden lg:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+                          aria-hidden
+                        >
+                          <div
+                            className={`flex items-center justify-center size-5 rounded-full border shadow-2xs transition-colors ${
+                              stageBridgeActive
+                                ? "border-signal/50 bg-card text-signal"
+                                : "border-rule bg-field text-muted-foreground/60"
+                            }`}
+                          >
+                            <ArrowRight className="size-3" />
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
-              <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                Host: Markovian World Model · NVIDIA Nemotron Super 120B / Ultra 550B / Nano 30B
-              </span>
-            </div>
-          </div>
-        ) : (
-          /* Hierarchical Tree View */
-          <div className="max-w-4xl mx-auto font-mono text-xs">
-            <TreeBranch
-              tree={graph.tree[0]}
-              selectedNodeId={selectedNodeId}
-              onSelect={setSelectedNodeId}
-              copy={flowCopy}
-            />
-          </div>
-        )}
-      </div>
 
-      {/* Compact Bottom Inspector Drawer */}
-      <aside className="border-t border-rule bg-card px-4 py-3">
-        <div className="grid gap-3 lg:grid-cols-[16rem_1fr] items-start">
-          {/* Inspector Col 1: Selected Agent Meta */}
-          <div className="flex flex-col gap-2 rounded-lg border border-rule bg-field/40 p-2.5">
-            <div className="flex items-start justify-between gap-2">
+              {/* Compact Topology Summary Strip */}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-rule bg-card px-3 py-1.5 text-[11px] font-mono text-muted-foreground mt-1">
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="flex items-center gap-1.5 text-ink font-medium">
+                    <span className="size-2 rounded-full bg-clear" />
+                    {flowCopy.status.done}: {graph.completedCount}/9
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-signal" />
+                    Host ({flowCopy.decides})
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-hold" />
+                    Nemotron ({flowCopy.explains})
+                  </span>
+                  {graph.hasRetries ? (
+                    <span className="flex items-center gap-1 rounded-full bg-hold/15 border border-hold/30 px-2 py-0.2 text-[10px] text-hold font-semibold">
+                      <RotateCcw className="size-2.5" /> {flowCopy.retryLoop}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  Host: Markovian World Model · NVIDIA Nemotron Super / Ultra / Nano
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* Hierarchical Tree View */
+            <div className="max-w-3xl mx-auto w-full font-mono text-xs py-2">
+              <TreeBranch
+                tree={graph.tree[0]}
+                selectedNodeId={selectedNodeId}
+                onSelect={setSelectedNodeId}
+                copy={flowCopy}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Right Side: Detailed Node Telemetry Inspector */}
+        <aside className="bg-card/90 p-4 md:p-5 flex flex-col gap-3 min-w-0">
+          {/* Inspector Header */}
+          <div className="flex items-start justify-between gap-2 border-b border-rule/80 pb-3">
+            <div className="flex items-start gap-2.5 min-w-0">
+              <div
+                className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                  selectedNode.authority === "decides"
+                    ? "bg-signal/10 border-signal/25 text-signal"
+                    : "bg-hold/12 border-hold/25 text-hold"
+                }`}
+              >
+                <SelectedIcon className="size-4" />
+              </div>
               <div className="min-w-0">
                 <p className="font-mono text-[9px] tracking-wider uppercase text-muted-foreground">
                   {flowCopy.inspectorTitle}
                 </p>
-                <h3 className="font-semibold text-xs text-ink truncate mt-0.5">
+                <h3 className="font-semibold text-sm text-ink truncate leading-tight">
                   {selectedNode.label}
                 </h3>
+                <p className="font-mono text-[10px] text-muted-foreground mt-0.5 truncate">
+                  action: <span className="text-ink font-medium">{selectedNode.action}</span>
+                </p>
               </div>
-              <StatusBadge status={selectedNode.status} copy={flowCopy} />
             </div>
+            <StatusBadge status={selectedNode.status} copy={flowCopy} />
+          </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px]">
+          {/* Badges Row */}
+          <div className="grid grid-cols-3 gap-2 font-mono text-[10px]">
+            <div className="rounded-lg border border-rule bg-field/50 p-2 text-center">
+              <span className="text-muted-foreground block text-[9px] uppercase">{flowCopy.authority}</span>
               <span
-                className={`rounded border px-1.5 py-0.5 font-semibold ${
-                  selectedNode.authority === "decides"
-                    ? "border-signal/30 bg-signal/10 text-signal"
-                    : "border-rule bg-card text-ink"
+                className={`font-semibold truncate block mt-0.5 ${
+                  selectedNode.authority === "decides" ? "text-signal" : "text-ink"
                 }`}
               >
                 {flowCopy[selectedNode.authority] || selectedNode.authority}
               </span>
-              <span className="rounded border border-rule bg-card px-1.5 py-0.5 text-ink">
+            </div>
+            <div className="rounded-lg border border-rule bg-field/50 p-2 text-center">
+              <span className="text-muted-foreground block text-[9px] uppercase">Model</span>
+              <span className="font-semibold text-ink truncate block mt-0.5">
                 {formatShortModel(selectedNode.model) || "Host"}
               </span>
-              {selectedNode.durationMs > 0 ? (
-                <span className="rounded border border-rule bg-card px-1.5 py-0.5 text-muted-foreground">
-                  {(selectedNode.durationMs / 1000).toFixed(2)}s
-                </span>
-              ) : null}
             </div>
+            <div className="rounded-lg border border-rule bg-field/50 p-2 text-center">
+              <span className="text-muted-foreground block text-[9px] uppercase">{flowCopy.totalDuration}</span>
+              <span className="font-semibold text-ink truncate block mt-0.5">
+                {selectedNode.durationMs > 0 ? `${(selectedNode.durationMs / 1000).toFixed(2)}s` : "0.0s"}
+              </span>
+            </div>
+          </div>
 
-            {selectedNode.evidenceIds.length > 0 ? (
-              <div className="flex flex-wrap gap-1 pt-0.5">
+          {/* Retry history (if applicable) */}
+          {selectedNode.attempts.length > 1 && (
+            <div className="rounded-lg border border-hold/40 bg-hold/10 p-2.5 text-xs">
+              <p className="font-semibold text-hold flex items-center gap-1.5 text-[11px]">
+                <RotateCcw className="size-3" />
+                {selectedNode.attempts.length} {flowCopy.attempts} ({flowCopy.retryLoop})
+              </p>
+              <div className="mt-1.5 space-y-1">
+                {selectedNode.attempts.map((att, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded bg-card/90 px-2 py-0.5 text-[10px] font-mono border border-hold/20"
+                  >
+                    <span>
+                      #{i + 1}: {att.status === "retry" ? flowCopy.status.retry : flowCopy.status.done}
+                    </span>
+                    <span>
+                      {(att.durationMs || 0) > 0
+                        ? `${((att.durationMs || 0) / 1000).toFixed(1)}s`
+                        : "<0.1s"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Evidence Cited Chips */}
+          {selectedNode.evidenceIds.length > 0 && (
+            <div>
+              <p className="font-mono text-[10px] uppercase text-muted-foreground mb-1">
+                {flowCopy.evidenceCited}
+              </p>
+              <div className="flex flex-wrap gap-1">
                 {selectedNode.evidenceIds.map((ev) => (
                   <span
                     key={ev}
-                    className="rounded border border-signal/30 bg-signal/10 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-signal"
+                    className="rounded border border-signal/30 bg-signal/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-signal"
                   >
                     {ev}
                   </span>
                 ))}
               </div>
-            ) : null}
-          </div>
-
-          {/* Inspector Col 2: Input & Full Output Side-by-Side */}
-          <div className="grid gap-2.5 md:grid-cols-2">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                {flowCopy.inputSummary}
-              </p>
-              <div className="rounded-lg border border-rule bg-paper px-2.5 py-2 font-mono text-[11px] text-ink leading-snug break-words max-h-24 overflow-y-auto">
-                {selectedNode.activeAttempt?.inputSummary || (
-                  <span className="text-muted-foreground italic">{flowCopy.inspectorEmpty}</span>
-                )}
-              </div>
             </div>
+          )}
 
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                {flowCopy.rawOutput}
-              </p>
-              <div className="rounded-lg border border-rule bg-paper px-2.5 py-2 font-mono text-[11px] text-ink leading-snug break-words max-h-24 overflow-y-auto">
-                {selectedNode.activeAttempt?.outputRaw || selectedNode.lastStep?.summary || (
-                  <span className="text-muted-foreground italic">{flowCopy.inspectorEmpty}</span>
-                )}
-              </div>
+          {/* Input Summary */}
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              {flowCopy.inputSummary}
+            </p>
+            <div className="rounded-lg border border-rule bg-paper px-3 py-2 font-mono text-[11px] text-ink leading-snug break-words max-h-24 overflow-y-auto">
+              {selectedNode.activeAttempt?.inputSummary || (
+                <span className="text-muted-foreground italic">{flowCopy.inspectorEmpty}</span>
+              )}
             </div>
           </div>
-        </div>
-      </aside>
+
+          {/* Output Raw / Live Telemetry */}
+          <div className="flex-1 min-h-0 flex flex-col">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+              {flowCopy.rawOutput}
+            </p>
+            <div className="rounded-lg border border-rule bg-paper px-3 py-2.5 font-mono text-[11px] text-ink leading-relaxed break-words flex-1 max-h-52 overflow-y-auto">
+              {selectedNode.activeAttempt?.outputRaw || selectedNode.lastStep?.summary || (
+                <span className="text-muted-foreground italic">{flowCopy.inspectorEmpty}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Footer hint */}
+          <p className="text-[10px] text-muted-foreground/70 italic text-center border-t border-rule/50 pt-2 mt-auto">
+            {lang === "es"
+              ? "Hacé clic en cualquier nodo para inspeccionar su telemetría."
+              : "Click any node in the graph to inspect its telemetry."}
+          </p>
+        </aside>
+      </div>
     </section>
   );
 }
