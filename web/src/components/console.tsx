@@ -14,7 +14,11 @@ import {
   Lock,
   UserCheck,
   ShieldCheck,
+  AlertTriangle,
+  Activity,
 } from "lucide-react";
+import { LiveTelemetryDrawer } from "@/components/live-telemetry-drawer";
+import { getScenarioMeta } from "@/lib/scenario-meta";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ExecutionFlow } from "@/components/execution-flow";
@@ -164,21 +168,21 @@ export function Console({
       : traces?.[baseScenario.file_id] || traces?.[baseScenario.scenario_id] || fallbackViews;
   }, [isRunning, liveStreamTrace, scenario.file_id, runMode, baseScenario.file_id, baseScenario.scenario_id, traces, fallbackViews]);
 
-  // Operator approval modal state
-  const [operatorName, setOperatorName] = useState(
-    lang === "es" ? "Operador Turno Poniente" : "Control Tower Operator",
-  );
+  const [operatorName, setOperatorName] = useState("");
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [approvalFeedback, setApprovalFeedback] = useState<string | null>(null);
 
+  const certificationName = operatorName.trim();
+
   async function handleApproval(decision: "approve" | "reject") {
+    if (decision === "approve" && !certificationName) return;
     try {
       const res = await fetch("/api/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           scenario_id: scenario.scenario_id,
-          operator_name: operatorName,
+          operator_name: certificationName,
           decision,
           reason:
             decision === "approve"
@@ -198,8 +202,8 @@ export function Console({
           },
         }));
         const msg = decision === "approve"
-          ? copy.platform.feedbackApprove.replace("{name}", operatorName)
-          : copy.platform.feedbackReject.replace("{name}", operatorName);
+          ? copy.platform.feedbackApprove.replace("{name}", certificationName)
+          : copy.platform.feedbackReject.replace("{name}", certificationName);
         setApprovalFeedback(msg);
         setTimeout(() => {
           setApprovalOpen(false);
@@ -459,24 +463,50 @@ export function Console({
               aria-label={copy.platform.search}
             />
           </div>
-          <div className="flex flex-1 items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex flex-1 items-center gap-2.5 overflow-x-auto pb-1">
             {visible.map((item) => {
               const active = item.file_id === scenario.file_id;
+              const meta = getScenarioMeta(item.file_id);
+              const title = meta.title[lang];
+              const subtitle = meta.subtitle[lang];
+              const severityLabel = meta.severityLabel[lang];
+
               return (
                 <button
                   key={item.file_id}
                   type="button"
                   onClick={() => select(item.file_id)}
                   aria-pressed={active}
-                  className={`flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm transition-colors duration-200 ${
-                    active ? "border-ink bg-ink text-bone" : "border-rule bg-card text-ink hover:bg-field"
+                  className={`group flex min-h-[50px] shrink-0 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2 text-left transition-all duration-200 shadow-2xs ${
+                    active
+                      ? "border-ink bg-ink text-bone shadow-xs ring-1 ring-ink"
+                      : "border-rule bg-card text-ink hover:border-ink/50 hover:bg-paper"
                   }`}
                 >
-                  <span className={`size-2.5 rounded-full ${statusDot[item.incident.status]}`} aria-hidden />
-                  <span className="font-mono text-xs">{item.file_id}</span>
-                  <span className={`text-xs ${active ? "text-bone" : item.incident.status === "real" ? "text-signal" : item.incident.status === "clear" ? "text-clear" : "text-hold"}`}>
-                    {item.incident.status}
-                  </span>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span className={`size-2 rounded-full shrink-0 ${statusDot[item.incident.status]}`} aria-hidden />
+                      <span className="font-semibold text-xs leading-tight">
+                        {title}
+                      </span>
+                      <span
+                        className={`rounded px-1.5 py-0.2 font-mono text-[9px] uppercase tracking-wider ${
+                          active
+                            ? "bg-white/20 text-bone"
+                            : meta.severity === "critical"
+                              ? "bg-signal/15 text-signal font-bold"
+                              : meta.severity === "warning"
+                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold"
+                                : "bg-clear/15 text-clear font-bold"
+                        }`}
+                      >
+                        {severityLabel}
+                      </span>
+                    </div>
+                    <span className={`text-[11px] mt-0.5 truncate max-w-[220px] ${active ? "text-bone/70" : "text-muted-foreground"}`}>
+                      {subtitle}
+                    </span>
+                  </div>
                 </button>
               );
             })}
@@ -499,27 +529,74 @@ export function Console({
           isReal={isRealTrace}
         />
 
+        {/* Live Thought & Telemetry Feed Drawer */}
+        <LiveTelemetryDrawer
+          lang={lang}
+          running={isRunning}
+          elapsed={runElapsed}
+          steps={liveStreamTrace[scenario.file_id] || []}
+          runMode={runMode}
+          scenarioId={scenario.scenario_id}
+        />
+
         {/* Decision & Response Grid */}
         <section className="grid items-start gap-5 lg:grid-cols-12">
           {/* Left Wing (Cols 1-7): Diagnostic & Decision Authority */}
           <div className="lg:col-span-7 flex flex-col gap-5">
             <section className="grid gap-4 rounded-xl border border-rule bg-card p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusMark status={scenario.incident.status} />
-                <span className="rounded-full border border-rule px-3 py-1 font-mono text-sm">
-                  {scenario.incident.incident_type}
-                </span>
-                {scenario.impact.routes.map((route) => (
-                  <span key={route} className="inline-flex items-center gap-1 rounded-full bg-hold/15 px-3 py-1 font-mono text-sm text-hold">
-                    <Bus className="size-3.5" aria-hidden />
-                    {route}
-                  </span>
-                ))}
-                <span className="inline-flex items-center gap-1 rounded-full bg-clear/10 px-3 py-1 font-mono text-sm text-clear">
-                  <Gauge className="size-3.5" aria-hidden />
-                  {scenario.incident.confidence}
-                </span>
-              </div>
+              {/* Executive Incident Header Banner */}
+              {(() => {
+                const currentMeta = getScenarioMeta(scenario.file_id);
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule/60 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                        currentMeta.severity === "critical"
+                          ? "bg-signal/15 border-signal/30 text-signal"
+                          : currentMeta.severity === "warning"
+                            ? "bg-amber-500/15 border-amber-500/30 text-amber-600"
+                            : "bg-clear/15 border-clear/30 text-clear"
+                      }`}>
+                        <AlertTriangle className="size-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-semibold text-sm text-ink leading-tight">
+                            {currentMeta.title[lang]}
+                          </h2>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-mono ${currentMeta.badgeClass}`}>
+                            {currentMeta.severityLabel[lang]}
+                          </span>
+                        </div>
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {currentMeta.incidentType[lang]} · {currentMeta.statusLabel[lang]}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className="h-auto max-w-full overflow-visible border-hold/40 bg-hold/10 px-2 py-0.5 font-mono text-[10px] font-semibold whitespace-normal text-hold"
+                          >
+                            Status: Action Recommended (applied = false)
+                          </Badge>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {scenario.impact.routes.map((route) => (
+                        <span key={route} className="inline-flex items-center gap-1 rounded-full bg-hold/15 border border-hold/30 px-2.5 py-0.5 font-mono text-xs text-hold font-semibold">
+                          <Bus className="size-3" aria-hidden />
+                          Ruta {route}
+                        </span>
+                      ))}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-clear/10 border border-clear/30 px-2.5 py-0.5 font-mono text-xs text-clear font-semibold">
+                        <Gauge className="size-3" aria-hidden />
+                        {Math.round(scenario.incident.confidence * 100)}% Confianza
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {scenario.scenario_id === "scn-false" || scenario.evidence_ids.includes("REP_FALSE_1") ? (
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 text-sm">
@@ -679,7 +756,9 @@ export function Console({
                         <div className="flex gap-2 pt-2">
                           <Button
                             onClick={() => handleApproval("approve")}
-                            className="flex-1 bg-clear hover:bg-clear/90 text-white cursor-pointer"
+                            disabled={!certificationName}
+                            aria-disabled={!certificationName}
+                            className="flex-1 bg-clear hover:bg-clear/90 text-white cursor-pointer disabled:cursor-not-allowed"
                           >
                             {copy.platform.btnApprove}
                           </Button>

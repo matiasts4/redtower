@@ -207,12 +207,6 @@ npm run dev
 
 Open `http://localhost:3010/` for the landing page and `http://localhost:3010/system` for the operating view. Port 3000 stays with Zetaris. From `/system`, Sample runs `run.py --sample --stream` and writes `logs/web_<scenario>.json`. Live stays disabled until `run.py --check` exits 0.
 
-## Sponsor Tech & HackOS Deliverables
-
-For the complete official answers ready to submit in the HackOS form (covering Zetaris Data Fabric, Meterless Nightshift runtime, Cursor environment, NVIDIA Nemotron model family, and architectural innovation), see:
-- [`SPONSOR_TECH_HACKOS.md`](file:///e:/OpenAgentHackathon/redtower/SPONSOR_TECH_HACKOS.md)
-- Root copy: [`../estrategia/entregable-4-sponsor-tech-redtower.md`](file:///e:/OpenAgentHackathon/estrategia/entregable-4-sponsor-tech-redtower.md)
-
 ## Limitations
 
 - One fictional corridor, four routes, five scenarios.
